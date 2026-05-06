@@ -55,6 +55,12 @@ class ProjectPersonnel extends Model
                 $projectPersonnel->personnel?->user?->removeRole($projectPersonnel->project_role);
             }
         });
+
+        static::restored(function (ProjectPersonnel $projectPersonnel): void {
+            if (in_array($projectPersonnel->project_role, [RoleAndPermissions::PROJECT_MANAGER, RoleAndPermissions::PROJECT_MEMBER], true)) {
+                $projectPersonnel->personnel?->user?->assignRole($projectPersonnel->project_role);
+            }
+        });
     }
 
     public function project(): BelongsTo

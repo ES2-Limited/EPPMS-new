@@ -129,6 +129,7 @@ class ProjectResource extends Resource
                 Tables\Columns\TextColumn::make('consultant.user.name')->label('Consultant')->searchable(),
                 Tables\Columns\TextColumn::make('status')->badge()->searchable(),
                 Tables\Columns\TextColumn::make('priority')->searchable(),
+                Tables\Columns\TextColumn::make('description')->searchable()->limit(40)->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('cost')->money('NGN')->sortable(),
                 Tables\Columns\TextColumn::make('total_paid')->money('NGN')->sortable(),
                 Tables\Columns\TextColumn::make('total_left')->money('NGN')->sortable(),
