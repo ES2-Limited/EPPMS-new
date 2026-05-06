@@ -7,21 +7,22 @@ use App\Models\Concerns\HasUserAudits;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Personnel extends Model
+class ContractorPersonnel extends Model
 {
     use HasFactory, HasUlid, HasUserAudits, SoftDeletes;
 
-    protected $table = 'personnel';
+    protected $table = 'contractor_personnel';
 
     protected $fillable = [
         'ulid',
         'user_id',
-        'directorate_id',
-        'department_id',
-        'office_id',
+        'contractor_id',
+        'name',
+        'email',
+        'phone',
+        'position',
         'created_by_id',
         'deleted_by',
     ];
@@ -31,28 +32,13 @@ class Personnel extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function directorate(): BelongsTo
+    public function contractor(): BelongsTo
     {
-        return $this->belongsTo(Directorate::class);
-    }
-
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class);
-    }
-
-    public function office(): BelongsTo
-    {
-        return $this->belongsTo(Office::class);
+        return $this->belongsTo(Contractor::class);
     }
 
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_id');
-    }
-
-    public function projectPersonnel(): HasMany
-    {
-        return $this->hasMany(ProjectPersonnel::class);
     }
 }

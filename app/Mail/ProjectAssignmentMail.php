@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -9,27 +10,23 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PersonnelWelcomeMail extends Mailable
+class ProjectAssignmentMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
         public User $user,
-        public string $password,
-        public string $accountType = 'NCAA ePPMS',
+        public Project $project,
+        public string $projectRole,
     ) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Welcome to '.$this->accountType,
-        );
+        return new Envelope(subject: 'Project Assignment: '.$this->project->name);
     }
 
     public function content(): Content
     {
-        return new Content(
-            view: 'emails.personnel-welcome',
-        );
+        return new Content(view: 'emails.project-assignment');
     }
 }

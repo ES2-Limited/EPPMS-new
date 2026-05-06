@@ -1,8 +1,9 @@
 <p>Hello {{ $user->name }},</p>
 
-<p>Your NCAA ePPMS account has been created.</p>
+<p>Your {{ app_organisation()?->name ?: 'ePPMS' }} account has been created for {{ $accountType }} access.</p>
 
 <p>
+    App URL: <a href="{{ config('app.url') }}">{{ config('app.url') }}</a><br>
     Login URL: <a href="{{ url('/admin/login') }}">{{ url('/admin/login') }}</a><br>
     Email: {{ $user->email }}<br>
     Password: {{ $password }}
