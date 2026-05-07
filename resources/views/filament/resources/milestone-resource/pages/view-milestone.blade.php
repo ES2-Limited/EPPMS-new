@@ -14,6 +14,7 @@
         @endif
 
         @include('filament.resources.image-gallery.milestone')
+        @include('filament.resources.comments.milestone')
     @endif
 
     @if (count($relationManagers))
@@ -36,6 +37,7 @@
                     @endif
 
                     @include('filament.resources.image-gallery.milestone')
+                    @include('filament.resources.comments.milestone')
                 </x-slot>
             @endif
         </x-filament-panels::resources.relation-managers>

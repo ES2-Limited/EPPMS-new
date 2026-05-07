@@ -14,6 +14,7 @@
         @endif
 
         @include('filament.resources.image-gallery.project')
+        @include('filament.resources.comments.project')
     @endif
 
     @if (count($relationManagers))
@@ -36,6 +37,7 @@
                     @endif
 
                     @include('filament.resources.image-gallery.project')
+                    @include('filament.resources.comments.project')
                 </x-slot>
             @endif
         </x-filament-panels::resources.relation-managers>
