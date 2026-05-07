@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Constants\RoleAndPermissions;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Spatie\Permission\Models\Role;
@@ -16,7 +15,7 @@ class RolePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('view_any_role');
     }
 
     /**
@@ -24,7 +23,7 @@ class RolePolicy
      */
     public function view(User $user, Role $role): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('view_role');
     }
 
     /**
@@ -32,7 +31,7 @@ class RolePolicy
      */
     public function create(User $user): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('create_role');
     }
 
     /**
@@ -40,7 +39,7 @@ class RolePolicy
      */
     public function update(User $user, Role $role): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('update_role');
     }
 
     /**
@@ -48,7 +47,7 @@ class RolePolicy
      */
     public function delete(User $user, Role $role): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('delete_role');
     }
 
     /**
@@ -56,7 +55,7 @@ class RolePolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('delete_any_role');
     }
 
     /**
@@ -64,7 +63,7 @@ class RolePolicy
      */
     public function forceDelete(User $user, Role $role): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('{{ ForceDelete }}');
     }
 
     /**
@@ -72,7 +71,7 @@ class RolePolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('{{ ForceDeleteAny }}');
     }
 
     /**
@@ -80,7 +79,7 @@ class RolePolicy
      */
     public function restore(User $user, Role $role): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('{{ Restore }}');
     }
 
     /**
@@ -88,7 +87,7 @@ class RolePolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('{{ RestoreAny }}');
     }
 
     /**
@@ -96,7 +95,7 @@ class RolePolicy
      */
     public function replicate(User $user, Role $role): bool
     {
-        return $this->isAdmin($user);
+        return $user->can('{{ Replicate }}');
     }
 
     /**
@@ -104,11 +103,6 @@ class RolePolicy
      */
     public function reorder(User $user): bool
     {
-        return $this->isAdmin($user);
-    }
-
-    private function isAdmin(User $user): bool
-    {
-        return $user->hasRole(RoleAndPermissions::ADMIN);
+        return $user->can('{{ Reorder }}');
     }
 }

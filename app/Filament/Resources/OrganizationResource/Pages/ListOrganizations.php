@@ -11,6 +11,17 @@ class ListOrganizations extends ListRecords
 {
     protected static string $resource = OrganizationResource::class;
 
+    public function mount(): void
+    {
+        parent::mount();
+
+        $organization = Organization::query()->first();
+
+        $this->redirect($organization
+            ? OrganizationResource::getUrl('view', ['record' => $organization])
+            : OrganizationResource::getUrl('create'));
+    }
+
     protected function getHeaderActions(): array
     {
         return [

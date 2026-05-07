@@ -5,7 +5,6 @@ namespace App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource;
 use App\Models\ProjectChat;
 use App\Support\ProjectAccess;
-use Filament\Actions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -73,16 +72,6 @@ class ViewProject extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\Action::make('report')
-                ->label('Project Report')
-                ->icon('heroicon-o-document-text')
-                ->visible(fn (): bool => $this->record->get_progress() === 100)
-                ->url(fn (): string => ProjectResource::getUrl('report', ['record' => $this->record])),
-            Actions\EditAction::make(),
-            Actions\DeleteAction::make(),
-            Actions\RestoreAction::make(),
-            Actions\ForceDeleteAction::make(),
-        ];
+        return [];
     }
 }

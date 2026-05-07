@@ -20,7 +20,15 @@ class CreateDepartment extends CreateRecord
 
     protected function getFormActions(): array
     {
-        return [$this->getCreateFormAction()->label('Save')];
+        return [
+            $this->getCancelFormAction()->label('Go back'),
+            $this->getCreateFormAction()->label('Save'),
+        ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 
     public function getFormActionsAlignment(): string|Alignment

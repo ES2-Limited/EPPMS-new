@@ -4,14 +4,11 @@ namespace App\Filament\Resources\ProjectResource\Pages;
 
 use App\Constants\RoleAndPermissions;
 use App\Filament\Resources\ProjectResource;
-use App\Filament\Widgets\OrgStatsBarWidget;
 use App\Models\Directorate;
 use App\Models\Office;
 use App\Models\Project;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
 
 class ListProjects extends ListRecords
@@ -19,6 +16,8 @@ class ListProjects extends ListRecords
     protected static string $resource = ProjectResource::class;
 
     protected static string $view = 'filament.resources.project-resource.pages.list-projects';
+
+    protected static ?string $title = '';
 
     #[Url(as: 'directorate')]
     public ?string $filterDirectorate = null;
@@ -45,7 +44,7 @@ class ListProjects extends ListRecords
             $query->where('project_type', $this->filterProjectType);
         }
 
-        return $query->latest()->paginate(12);
+        return $query->latest()->paginate(9)->withQueryString();
     }
 
     public function getDirectorateOptions(): array
@@ -79,28 +78,24 @@ class ListProjects extends ListRecords
         ]) ?? false;
     }
 
-    protected function getHeaderActions(): array
+    public function getHeading(): string
     {
-        return [
-            Actions\CreateAction::make()
-                ->label('Add a Project')
-                ->visible(fn (): bool => $this->canCreate()),
-        ];
+        return '';
     }
 
     protected function getHeaderWidgets(): array
     {
-        return [OrgStatsBarWidget::class];
+        return [];
     }
 
     public function getProgressColour(int $progress): string
     {
         return match (true) {
-            $progress <= 25         => '#DC2626',
-            $progress <= 50         => '#EA580C',
-            $progress <= 70         => '#CA8A04',
-            $progress <= 89         => '#2563EB',
-            default                 => '#16A34A',
+            $progress <= 25 => '#DC2626',
+            $progress <= 50 => '#EA580C',
+            $progress <= 70 => '#CA8A04',
+            $progress <= 89 => '#2563EB',
+            default => '#16A34A',
         };
     }
 }

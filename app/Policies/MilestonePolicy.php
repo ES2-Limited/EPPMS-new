@@ -3,69 +3,106 @@
 namespace App\Policies;
 
 use App\Models\Milestone;
-use App\Models\Project;
 use App\Models\User;
-use App\Support\ProjectAccess;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class MilestonePolicy
 {
+    use HandlesAuthorization;
+
+    /**
+     * Determine whether the user can view any models.
+     */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->can('view_any_milestone');
     }
 
+    /**
+     * Determine whether the user can view the model.
+     */
     public function view(User $user, Milestone $milestone): bool
     {
-        return $milestone->project && ProjectAccess::canViewProject($user, $milestone->project);
+        return $user->can('view_milestone');
     }
 
+    /**
+     * Determine whether the user can create models.
+     */
     public function create(User $user): bool
     {
-        return ProjectAccess::canManageProject($user);
+        return $user->can('create_milestone');
     }
 
+    /**
+     * Determine whether the user can update the model.
+     */
     public function update(User $user, Milestone $milestone): bool
     {
-        return $milestone->project && ProjectAccess::canManageMilestone($user, $milestone->project);
+        return $user->can('update_milestone');
     }
 
+    /**
+     * Determine whether the user can delete the model.
+     */
     public function delete(User $user, Milestone $milestone): bool
     {
-        return $milestone->project && ProjectAccess::canManageMilestone($user, $milestone->project);
+        return $user->can('delete_milestone');
     }
 
+    /**
+     * Determine whether the user can bulk delete.
+     */
     public function deleteAny(User $user): bool
     {
-        return ProjectAccess::canManageProject($user);
+        return $user->can('delete_any_milestone');
     }
 
-    public function restore(User $user, Milestone $milestone): bool
-    {
-        return $milestone->project && ProjectAccess::canManageMilestone($user, $milestone->project);
-    }
-
-    public function restoreAny(User $user): bool
-    {
-        return ProjectAccess::canManageProject($user);
-    }
-
+    /**
+     * Determine whether the user can permanently delete.
+     */
     public function forceDelete(User $user, Milestone $milestone): bool
     {
-        return $milestone->project && ProjectAccess::canManageMilestone($user, $milestone->project);
+        return $user->can('force_delete_milestone');
     }
 
+    /**
+     * Determine whether the user can permanently bulk delete.
+     */
     public function forceDeleteAny(User $user): bool
     {
-        return ProjectAccess::canManageProject($user);
+        return $user->can('force_delete_any_milestone');
     }
 
+    /**
+     * Determine whether the user can restore.
+     */
+    public function restore(User $user, Milestone $milestone): bool
+    {
+        return $user->can('restore_milestone');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_milestone');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
     public function replicate(User $user, Milestone $milestone): bool
     {
-        return $milestone->project && ProjectAccess::canManageMilestone($user, $milestone->project);
+        return $user->can('replicate_milestone');
     }
 
+    /**
+     * Determine whether the user can reorder.
+     */
     public function reorder(User $user): bool
     {
-        return ProjectAccess::canManageProject($user);
+        return $user->can('reorder_milestone');
     }
 }

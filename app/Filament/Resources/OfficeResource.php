@@ -93,32 +93,24 @@ class OfficeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('type')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('type')->label('Office Type')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('state')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('lga')->label('L.G.A.')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('email')->searchable(),
-                Tables\Columns\TextColumn::make('phone')->label('Phone Number')->searchable(),
-                Tables\Columns\TextColumn::make('address')->searchable()->limit(45),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('state')->options(fn (): array => Office::query()->whereNotNull('state')->pluck('state', 'state')->all()),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalHeading('Are you sure you want to delete this record?')
+                        ->modalSubmitActionLabel('Delete')
+                        ->modalCancelActionLabel('Cancel')
+                        ->before(fn (Office $record) => $record->forceFill(['deleted_by' => auth()->id()])->saveQuietly()),
                 ]),
             ])
+            ->bulkActions([])
             ->paginated([10, 25, 50]);
     }
 

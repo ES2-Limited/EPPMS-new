@@ -144,15 +144,9 @@ class PersonnelResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label('Name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable(),
-                Tables\Columns\TextColumn::make('phone')->label('Phone')->state(fn (Personnel $record): ?string => $record->phone ?: $record->user?->phone)->searchable(),
-                Tables\Columns\TextColumn::make('designation')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('user.roles.name')->label('Roles')->badge(),
-                Tables\Columns\TextColumn::make('directorate.name')->label('Directorate')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('department.name')->label('Department')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('office.name')->label('Office')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('user.name')->label('Full Name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('directorate.name')->label('Directorate Name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('department.name')->label('Department Name')->searchable()->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('directorate_id')->label('Directorate')->options(fn (): array => Directorate::query()->pluck('name', 'id')->all()),
@@ -164,19 +158,17 @@ class PersonnelResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalHeading('Are you sure you want to delete this record?')
+                        ->modalSubmitActionLabel('Delete')
+                        ->modalCancelActionLabel('Cancel')
+                        ->before(fn (Personnel $record) => $record->forceFill(['deleted_by' => auth()->id()])->saveQuietly()),
                 ]),
             ])
+            ->bulkActions([])
             ->paginated([10, 25, 50]);
     }
 

@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DashboardStatsOverview extends StatsOverviewWidget
 {
+    protected static bool $isDiscovered = false;
+
     protected static ?int $sort = 1;
 
     protected function getStats(): array

@@ -20,7 +20,15 @@ class EditDepartment extends EditRecord
 
     protected function getFormActions(): array
     {
-        return [$this->getSaveFormAction()->label('Save')];
+        return [
+            $this->getCancelFormAction()->label('Go back'),
+            $this->getSaveFormAction()->label('Save'),
+        ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 
     public function getFormActionsAlignment(): string|Alignment

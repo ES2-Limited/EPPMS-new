@@ -85,6 +85,11 @@ class Project extends Model
         return $this->belongsTo(Contractor::class, 'consultant_id');
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_id');
+    }
+
     public function milestones(): HasMany
     {
         return $this->hasMany(Milestone::class);
@@ -125,9 +130,9 @@ class Project extends Model
 
         return match ($this->duration_period) {
             'months' => $end->addMonths($this->duration),
-            'weeks'  => $end->addWeeks($this->duration),
-            'days'   => $end->addDays($this->duration),
-            default  => $end,
+            'weeks' => $end->addWeeks($this->duration),
+            'days' => $end->addDays($this->duration),
+            default => $end,
         };
     }
 

@@ -2,98 +2,107 @@
 
 namespace App\Policies;
 
-use App\Constants\RoleAndPermissions;
 use App\Models\Contractor;
 use App\Models\User;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ContractorPolicy
 {
-    protected function canManage(User $user): bool
-    {
-        return $user->hasAnyRole([
-            RoleAndPermissions::ADMIN,
-            RoleAndPermissions::ORGANIZATION_ADMIN,
-        ]);
-    }
+    use HandlesAuthorization;
 
-    protected function canViewAll(User $user): bool
-    {
-        return $user->hasAnyRole(RoleAndPermissions::SYSTEM_ROLES);
-    }
-
+    /**
+     * Determine whether the user can view any models.
+     */
     public function viewAny(User $user): bool
     {
-        return $this->canViewAll($user) || $user->hasAnyRole([
-            RoleAndPermissions::CONTRACTOR,
-            RoleAndPermissions::CONSULTANT,
-            RoleAndPermissions::CONTRACTOR_PERSONNEL,
-        ]);
+        return $user->can('view_any_contractor');
     }
 
+    /**
+     * Determine whether the user can view the model.
+     */
     public function view(User $user, Contractor $contractor): bool
     {
-        if ($this->canViewAll($user)) {
-            return true;
-        }
-
-        if ($user->hasAnyRole([RoleAndPermissions::CONTRACTOR, RoleAndPermissions::CONSULTANT])) {
-            return $contractor->user_id === $user->id;
-        }
-
-        if ($user->hasRole(RoleAndPermissions::CONTRACTOR_PERSONNEL)) {
-            return $contractor->personnel()->where('user_id', $user->id)->exists();
-        }
-
-        return false;
+        return $user->can('view_contractor');
     }
 
+    /**
+     * Determine whether the user can create models.
+     */
     public function create(User $user): bool
     {
-        return $this->canManage($user);
+        return $user->can('create_contractor');
     }
 
+    /**
+     * Determine whether the user can update the model.
+     */
     public function update(User $user, Contractor $contractor): bool
     {
-        return $this->canManage($user);
+        return $user->can('update_contractor');
     }
 
+    /**
+     * Determine whether the user can delete the model.
+     */
     public function delete(User $user, Contractor $contractor): bool
     {
-        return $this->canManage($user);
+        return $user->can('delete_contractor');
     }
 
+    /**
+     * Determine whether the user can bulk delete.
+     */
     public function deleteAny(User $user): bool
     {
-        return $this->canManage($user);
+        return $user->can('delete_any_contractor');
     }
 
-    public function restore(User $user, Contractor $contractor): bool
-    {
-        return $this->canManage($user);
-    }
-
-    public function restoreAny(User $user): bool
-    {
-        return $this->canManage($user);
-    }
-
+    /**
+     * Determine whether the user can permanently delete.
+     */
     public function forceDelete(User $user, Contractor $contractor): bool
     {
-        return $this->canManage($user);
+        return $user->can('force_delete_contractor');
     }
 
+    /**
+     * Determine whether the user can permanently bulk delete.
+     */
     public function forceDeleteAny(User $user): bool
     {
-        return $this->canManage($user);
+        return $user->can('force_delete_any_contractor');
     }
 
+    /**
+     * Determine whether the user can restore.
+     */
+    public function restore(User $user, Contractor $contractor): bool
+    {
+        return $user->can('restore_contractor');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_contractor');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
     public function replicate(User $user, Contractor $contractor): bool
     {
-        return $this->canManage($user);
+        return $user->can('replicate_contractor');
     }
 
+    /**
+     * Determine whether the user can reorder.
+     */
     public function reorder(User $user): bool
     {
-        return $this->canManage($user);
+        return $user->can('reorder_contractor');
     }
 }

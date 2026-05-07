@@ -110,29 +110,25 @@ class ContractorResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label('Firm Name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('phone')->label('Phone')->state(fn (Contractor $record): ?string => $record->phone ?: $record->user?->phone)->searchable(),
-                Tables\Columns\TextColumn::make('website')->searchable(),
-                Tables\Columns\TextColumn::make('firm_type_id')->label('Firm Type')->formatStateUsing(fn (int $state): string => $state === Contractor::TYPE_CONSULTANT ? 'Consultant' : 'Contractor')->badge(),
-                Tables\Columns\TextColumn::make('personnel_count')->label('Personnel')->counts('personnel')->sortable(),
-                Tables\Columns\TextColumn::make('project_count')
-                    ->label('Projects')
-                    ->state(fn (Contractor $record): int => $record->projects()->count() + $record->consultantProjects()->count())
-                    ->sortable(false),
-                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('firm_type_id')->label('Firm Type')->options(static::firmTypeOptions()),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalHeading('Are you sure you want to delete this firm?')
+                        ->modalSubmitActionLabel('Delete')
+                        ->modalCancelActionLabel('Cancel')
+                        ->before(fn (Contractor $record) => $record->forceFill(['deleted_by' => auth()->id()])->saveQuietly()),
+                ]),
             ])
+            ->emptyStateHeading('No firms registered yet.')
             ->paginated([10, 25, 50]);
     }
 
@@ -148,7 +144,21 @@ class ContractorResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        if ($user->hasAnyRole([RoleAndPermissions::CONTRACTOR, RoleAndPermissions::CONSULTANT])) {
+        if ($user->hasAnyRole([
+            RoleAndPermissions::ADMIN,
+            RoleAndPermissions::ORGANIZATION_ADMIN,
+            RoleAndPermissions::MANAGEMENT_ADMIN,
+            RoleAndPermissions::AUDITOR,
+            RoleAndPermissions::DIRECTORATE_ADMIN,
+        ])) {
+            return $query;
+        }
+
+        if ($user->hasRole(RoleAndPermissions::CONTRACTOR)) {
+            return $query->where('user_id', $user->id);
+        }
+
+        if ($user->hasRole(RoleAndPermissions::CONSULTANT)) {
             return $query->where('user_id', $user->id);
         }
 
@@ -156,7 +166,20 @@ class ContractorResource extends Resource
             return $query->whereHas('personnel', fn (Builder $personnel): Builder => $personnel->where('user_id', $user->id));
         }
 
-        return $query;
+        return $query->whereNull('id');
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasAnyRole([
+            RoleAndPermissions::ADMIN,
+            RoleAndPermissions::ORGANIZATION_ADMIN,
+            RoleAndPermissions::MANAGEMENT_ADMIN,
+            RoleAndPermissions::AUDITOR,
+            RoleAndPermissions::DIRECTORATE_ADMIN,
+            RoleAndPermissions::CONTRACTOR,
+            RoleAndPermissions::CONSULTANT,
+        ]) ?? false;
     }
 
     public static function getPages(): array

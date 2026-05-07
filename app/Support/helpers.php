@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Cache;
 if (! function_exists('app_organisation')) {
     function app_organisation(): ?Organization
     {
-        return Cache::remember('organisation', 3600, fn (): ?Organization => Organization::query()->first());
+        return Cache::remember('app_organisation', 3600, fn (): ?Organization => Organization::query()->first());
     }
 }
 

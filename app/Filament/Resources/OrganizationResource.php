@@ -22,9 +22,9 @@ class OrganizationResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $modelLabel = 'Organisation';
+    protected static ?string $modelLabel = 'Organization';
 
-    protected static ?string $pluralModelLabel = 'Organisation';
+    protected static ?string $pluralModelLabel = 'Organization';
 
     public static function form(Form $form): Form
     {
@@ -33,28 +33,24 @@ class OrganizationResource extends Resource
                 Forms\Components\Section::make('Organisation Details')
                     ->schema([
                         Forms\Components\TextInput::make('name')
-                            ->label('Organisation Name')
+                            ->label('Name')
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('website')
+                            ->label('Website')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->maxLength(255),
                         Forms\Components\FileUpload::make('logo')
+                            ->label('Logo')
                             ->image()
                             ->disk('public')
                             ->directory('organisation')
                             ->visibility('public')
                             ->maxSize(2048)
                             ->helperText('Stored in storage/app/public/organisation and served from /storage/organisation.'),
-                        Forms\Components\Textarea::make('address')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                        Forms\Components\TextInput::make('phone')
-                            ->tel()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('email')
-                            ->email()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('website')
-                            ->url()
-                            ->maxLength(255),
                     ])
                     ->columns(2),
             ]);
@@ -94,6 +90,8 @@ class OrganizationResource extends Resource
         return [
             'index' => Pages\ListOrganizations::route('/'),
             'create' => Pages\CreateOrganization::route('/create'),
+            'view' => Pages\ViewOrganization::route('/{record}'),
+            'print' => Pages\PrintOrganization::route('/{record}/print'),
             'edit' => Pages\EditOrganization::route('/{record}/edit'),
         ];
     }

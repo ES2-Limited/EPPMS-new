@@ -110,12 +110,14 @@ class ContractorPersonnelResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('contractor.user.name')->label('Firm Name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('designation')->label('Designation')->state(fn (ContractorPersonnel $record): ?string => $record->designation ?: $record->position)->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('email')->searchable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Name')
+                    ->state(fn (ContractorPersonnel $record): string => trim($record->first_name.' '.$record->last_name) ?: ($record->name ?? '-'))
+                    ->searchable(['first_name', 'last_name', 'name'])
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('phone')->searchable(),
-                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('email')->searchable(),
+                Tables\Columns\TextColumn::make('contractor.user.name')->label('Contractor Name')->searchable()->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('contractor_id')
@@ -124,12 +126,16 @@ class ContractorPersonnelResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalHeading('Are you sure you want to delete this contractor personnel?')
+                        ->modalSubmitActionLabel('Delete')
+                        ->modalCancelActionLabel('Cancel')
+                        ->before(fn (ContractorPersonnel $record) => $record->forceFill(['deleted_by' => auth()->id()])->saveQuietly()),
+                ]),
             ])
+            ->emptyStateHeading('No contractor personnel registered yet.')
             ->paginated([10, 25, 50]);
     }
 
@@ -154,6 +160,17 @@ class ContractorPersonnelResource extends Resource
         }
 
         return $query;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasAnyRole([
+            RoleAndPermissions::ADMIN,
+            RoleAndPermissions::ORGANIZATION_ADMIN,
+            RoleAndPermissions::MANAGEMENT_ADMIN,
+            RoleAndPermissions::AUDITOR,
+            RoleAndPermissions::CONTRACTOR,
+        ]) ?? false;
     }
 
     public static function getPages(): array

@@ -61,30 +61,25 @@ class UnitResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('department.name')->label('Department')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('function')->searchable()->limit(60),
-                Tables\Columns\TextColumn::make('department.directorate.name')->label('Directorate')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('department.name')->label('Department Name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('name')->label('Unit Name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('function')->label('Function')->searchable()->limit(60),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('department_id')->label('Department')->options(fn (): array => Department::query()->pluck('name', 'id')->all()),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalHeading('Are you sure you want to delete this record?')
+                        ->modalSubmitActionLabel('Delete')
+                        ->modalCancelActionLabel('Cancel')
+                        ->before(fn (Unit $record) => $record->forceFill(['deleted_by' => auth()->id()])->saveQuietly()),
                 ]),
             ])
+            ->bulkActions([])
             ->paginated([10, 25, 50]);
     }
 

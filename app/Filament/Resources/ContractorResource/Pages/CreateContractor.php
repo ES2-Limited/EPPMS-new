@@ -8,6 +8,7 @@ use App\Mail\PersonnelWelcomeMail;
 use App\Models\Contractor;
 use App\Models\User;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Enums\Alignment;
 use Illuminate\Database\Eloquent\Model;
@@ -56,7 +57,9 @@ class CreateContractor extends CreateRecord
         $password = $data['password'];
         $role = ((int) $data['firm_type_id'] === Contractor::TYPE_CONSULTANT) ? RoleAndPermissions::CONSULTANT : RoleAndPermissions::CONTRACTOR;
 
-        $contractor = DB::transaction(function () use ($data, $password, $role): Contractor {
+        DB::beginTransaction();
+
+        try {
             $user = User::query()->create([
                 'name' => $data['firm_name'],
                 'email' => $data['email'],
@@ -66,14 +69,31 @@ class CreateContractor extends CreateRecord
 
             $user->assignRole($role);
 
-            return Contractor::query()->create([
+            $contractor = Contractor::query()->create([
                 'user_id' => $user->id,
                 'firm_type_id' => $data['firm_type_id'],
                 'phone' => $data['phone'] ?? null,
                 'website' => $data['website'] ?? null,
                 'logo' => $data['logo'] ?? null,
             ]);
-        });
+
+            DB::commit();
+        } catch (Throwable $exception) {
+            DB::rollBack();
+
+            Log::error('Firm creation failed: '.$exception->getMessage(), [
+                'email' => $data['email'] ?? null,
+                'firm_type_id' => $data['firm_type_id'] ?? null,
+            ]);
+
+            Notification::make()
+                ->title('Error creating firm')
+                ->body($exception->getMessage())
+                ->danger()
+                ->send();
+
+            throw $exception;
+        }
 
         try {
             Mail::to($contractor->user)->send(new PersonnelWelcomeMail($contractor->user, $password, $contractor->firmTypeLabel()));
