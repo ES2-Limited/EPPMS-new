@@ -19,6 +19,11 @@ class Personnel extends Model
     protected $fillable = [
         'ulid',
         'user_id',
+        'first_name',
+        'last_name',
+        'other_name',
+        'phone',
+        'designation',
         'directorate_id',
         'department_id',
         'office_id',

@@ -28,21 +28,49 @@ class DepartmentResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\Select::make('directorate_id')
-                ->relationship('directorate', 'name')
-                ->searchable()
-                ->preload()
-                ->required(),
-        ])->columns(2);
+            Forms\Components\View::make('filament.components.reference-page-intro')
+                ->viewData(['subtitle' => 'Enter information to create department', 'stats' => 'org'])
+                ->visibleOn(['create', 'edit'])
+                ->columnSpanFull(),
+            Forms\Components\Section::make()
+                ->schema([
+                    Forms\Components\Select::make('directorate_id')
+                        ->label('Directorate Name')
+                        ->relationship('directorate', 'name')
+                        ->placeholder('Choose Directorate')
+                        ->searchable()
+                        ->preload()
+                        ->required(),
+                    Forms\Components\TextInput::make('department_code')
+                        ->label('Department ID')
+                        ->placeholder('Department ID')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('name')
+                        ->label('Department Name')
+                        ->placeholder('Department Name')
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpanFull(),
+                    Forms\Components\Textarea::make('function')
+                        ->label('Department Function')
+                        ->placeholder('Department Function')
+                        ->required()
+                        ->rows(5)
+                        ->columnSpanFull(),
+                ])
+                ->columns(2),
+        ])->columns(1);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('directorate.name')->label('Directorate')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('department_code')->label('Department ID')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('function')->searchable()->limit(60),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

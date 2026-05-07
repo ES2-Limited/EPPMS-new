@@ -7,17 +7,40 @@ use App\Filament\Resources\ContractorResource;
 use App\Mail\PersonnelWelcomeMail;
 use App\Models\Contractor;
 use App\Models\User;
+use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Enums\Alignment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Throwable;
 
 class CreateContractor extends CreateRecord
 {
     protected static string $resource = ContractorResource::class;
+
+    protected static ?string $title = 'Firm Registration';
+
+    protected function getHeaderActions(): array
+    {
+        return [Actions\Action::make('goBack')->label('Go back')->url(static::getResource()::getUrl())->color('primary')];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()->label('Save'),
+            $this->getCancelFormAction()
+                ->label('Cancel')
+                ->extraAttributes(['style' => 'background-color: #FCE8EC; color: #9F1239;']),
+        ];
+    }
+
+    public function getFormActionsAlignment(): string|Alignment
+    {
+        return Alignment::End;
+    }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -30,7 +53,7 @@ class CreateContractor extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        $password = Str::password(12);
+        $password = $data['password'];
         $role = ((int) $data['firm_type_id'] === Contractor::TYPE_CONSULTANT) ? RoleAndPermissions::CONSULTANT : RoleAndPermissions::CONTRACTOR;
 
         $contractor = DB::transaction(function () use ($data, $password, $role): Contractor {
@@ -46,6 +69,9 @@ class CreateContractor extends CreateRecord
             return Contractor::query()->create([
                 'user_id' => $user->id,
                 'firm_type_id' => $data['firm_type_id'],
+                'phone' => $data['phone'] ?? null,
+                'website' => $data['website'] ?? null,
+                'logo' => $data['logo'] ?? null,
             ]);
         });
 

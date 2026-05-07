@@ -16,6 +16,7 @@ class Directorate extends Model
 
     protected $fillable = [
         'ulid',
+        'directorate_code',
         'name',
         'function',
         'created_by_id',

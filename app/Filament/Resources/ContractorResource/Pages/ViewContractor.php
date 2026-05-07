@@ -14,7 +14,7 @@ class ViewContractor extends ViewRecord
     {
         $data['firm_name'] = $this->record->user?->name;
         $data['email'] = $this->record->user?->email;
-        $data['phone'] = $this->record->user?->phone;
+        $data['phone'] = $this->record->phone ?: $this->record->user?->phone;
 
         return $data;
     }

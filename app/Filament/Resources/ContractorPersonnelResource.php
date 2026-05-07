@@ -30,26 +30,80 @@ class ContractorPersonnelResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('contractor_id')
-                ->label('Firm')
-                ->options(fn (): array => Contractor::query()->with('user')->get()->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Firm #'.$contractor->id])->all())
-                ->searchable()
-                ->preload()
-                ->required(),
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\TextInput::make('email')
-                ->email()
-                ->required()
-                ->maxLength(255)
-                ->rule(fn (?ContractorPersonnel $record) => Rule::unique('users', 'email')->ignore($record?->user_id))
-                ->validationMessages([
-                    'required' => 'Enter the personnel email address.',
-                    'email' => 'Enter a valid personnel email address.',
-                    'unique' => 'This email address is already in use.',
-                ]),
-            Forms\Components\TextInput::make('phone')->tel()->maxLength(30),
-            Forms\Components\TextInput::make('position')->maxLength(255),
-        ])->columns(2);
+            Forms\Components\View::make('filament.components.reference-page-intro')
+                ->viewData(['heading' => 'Personnel Information', 'subtitle' => 'Enter the Personnel Information here', 'stats' => 'firm'])
+                ->visibleOn(['create', 'edit'])
+                ->columnSpanFull(),
+            Forms\Components\Section::make('Personnel Credentials')
+                ->schema([
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 3])
+                        ->schema([
+                            Forms\Components\TextInput::make('first_name')
+                                ->label('First Name')
+                                ->placeholder('First Name')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('last_name')
+                                ->label('Last Name')
+                                ->placeholder('Last Name')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('other_name')
+                                ->label('Other')
+                                ->placeholder('Other')
+                                ->maxLength(255),
+                        ]),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 3])
+                        ->schema([
+                            Forms\Components\TextInput::make('email')
+                                ->label('Email')
+                                ->placeholder('Johndoe@gmail.com')
+                                ->email()
+                                ->required()
+                                ->maxLength(255)
+                                ->rule(fn (?ContractorPersonnel $record) => Rule::unique('users', 'email')->ignore($record?->user_id))
+                                ->validationMessages([
+                                    'required' => 'Enter the personnel email address.',
+                                    'email' => 'Enter a valid personnel email address.',
+                                    'unique' => 'This email address is already in use.',
+                                ]),
+                            Forms\Components\TextInput::make('phone')
+                                ->label('Phone Number')
+                                ->placeholder('Phone Number')
+                                ->tel()
+                                ->minLength(7)
+                                ->maxLength(30)
+                                ->required(),
+                            Forms\Components\TextInput::make('designation')
+                                ->label('Designation')
+                                ->placeholder('Designation')
+                                ->maxLength(255),
+                        ]),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 2])
+                        ->schema([
+                            Forms\Components\Select::make('contractor_id')
+                                ->label('Project Contractor')
+                                ->options(fn (): array => Contractor::query()
+                                    ->where('firm_type_id', Contractor::TYPE_CONTRACTOR)
+                                    ->with('user')
+                                    ->get()
+                                    ->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Firm #'.$contractor->id])
+                                    ->all())
+                                ->placeholder('Choose Contractor')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+                            Forms\Components\TextInput::make('password')
+                                ->label('Password')
+                                ->password()
+                                ->revealable()
+                                ->visibleOn(['create', 'edit'])
+                                ->required(fn (string $operation): bool => $operation === 'create')
+                                ->dehydrated(fn (?string $state): bool => filled($state)),
+                        ]),
+                ])
+                ->columns(1),
+        ])->columns(1);
     }
 
     public static function table(Table $table): Table
@@ -58,7 +112,7 @@ class ContractorPersonnelResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('contractor.user.name')->label('Firm Name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('position')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('designation')->label('Designation')->state(fn (ContractorPersonnel $record): ?string => $record->designation ?: $record->position)->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->searchable(),
                 Tables\Columns\TextColumn::make('phone')->searchable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
@@ -66,7 +120,7 @@ class ContractorPersonnelResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('contractor_id')
                     ->label('Firm')
-                    ->options(fn (): array => Contractor::query()->with('user')->get()->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Firm #'.$contractor->id])->all()),
+                    ->options(fn (): array => Contractor::query()->where('firm_type_id', Contractor::TYPE_CONTRACTOR)->with('user')->get()->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Firm #'.$contractor->id])->all()),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([

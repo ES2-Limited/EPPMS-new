@@ -10,11 +10,14 @@ use App\Models\Office;
 use App\Models\Personnel;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
 
 class PersonnelResource extends Resource
 {
@@ -40,37 +43,101 @@ class PersonnelResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make('User Details')
+            Forms\Components\View::make('filament.components.reference-page-intro')
+                ->viewData(['subtitle' => 'Enter Information to create a Personnel account', 'stats' => 'org'])
+                ->visibleOn(['create', 'edit'])
+                ->columnSpanFull(),
+            Forms\Components\Section::make('Personnel Credentials')
                 ->schema([
-                    Forms\Components\TextInput::make('first_name')->required()->maxLength(255)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                    Forms\Components\TextInput::make('last_name')->required()->maxLength(255)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                    Forms\Components\TextInput::make('email')
-                        ->email()
-                        ->required()
-                        ->unique('users', 'email')
-                        ->maxLength(255)
-                        ->validationMessages([
-                            'required' => 'Enter the personnel email address.',
-                            'email' => 'Enter a valid personnel email address.',
-                            'unique' => 'This email address is already in use.',
-                        ])
-                        ->visibleOn('create')
-                        ->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                    Forms\Components\TextInput::make('phone')->tel()->maxLength(30)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                    Forms\Components\Select::make('role')->options(static::systemRoleOptions())->required()->searchable()->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                    Forms\Components\Placeholder::make('user.name')->label('Name')->content(fn (?Personnel $record): string => $record?->user?->name ?? '-')->visibleOn(['edit', 'view']),
-                    Forms\Components\Placeholder::make('user.email')->label('Email')->content(fn (?Personnel $record): string => $record?->user?->email ?? '-')->visibleOn(['edit', 'view']),
-                    Forms\Components\Placeholder::make('user.phone')->label('Phone')->content(fn (?Personnel $record): string => $record?->user?->phone ?? '-')->visibleOn(['edit', 'view']),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 3])
+                        ->schema([
+                            Forms\Components\TextInput::make('first_name')
+                                ->label('First Name')
+                                ->placeholder('First Name')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('last_name')
+                                ->label('Last Name')
+                                ->placeholder('Last Name')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('other_name')
+                                ->label('Other')
+                                ->placeholder('Other')
+                                ->maxLength(255),
+                        ]),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 3])
+                        ->schema([
+                            Forms\Components\TextInput::make('email')
+                                ->label('Email')
+                                ->placeholder('Johndoe@gmail.com')
+                                ->email()
+                                ->required()
+                                ->maxLength(255)
+                                ->rule(fn (?Personnel $record) => Rule::unique('users', 'email')->ignore($record?->user_id))
+                                ->validationMessages([
+                                    'required' => 'Enter the personnel email address.',
+                                    'email' => 'Enter a valid personnel email address.',
+                                    'unique' => 'This email address is already in use.',
+                                ]),
+                            Forms\Components\TextInput::make('phone')
+                                ->label('Phone Number')
+                                ->placeholder('Phone Number')
+                                ->tel()
+                                ->minLength(7)
+                                ->maxLength(30)
+                                ->required(),
+                            Forms\Components\TextInput::make('designation')
+                                ->label('Designation')
+                                ->placeholder('Designation')
+                                ->maxLength(255),
+                        ]),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 3])
+                        ->schema([
+                            Forms\Components\Select::make('role')
+                                ->label('Personnel Role')
+                                ->options(static::systemRoleOptions())
+                                ->placeholder('Choose Role')
+                                ->required()
+                                ->searchable()
+                                ->native(false),
+                            Forms\Components\Select::make('directorate_id')
+                                ->label('Directorate Name')
+                                ->options(fn (): array => Directorate::query()->pluck('name', 'id')->all())
+                                ->placeholder('Choose Directorate')
+                                ->searchable()
+                                ->preload()
+                                ->live()
+                                ->afterStateUpdated(fn (Set $set) => $set('department_id', null)),
+                            Forms\Components\Select::make('department_id')
+                                ->label('Department')
+                                ->options(fn (Get $get): array => Department::query()
+                                    ->when($get('directorate_id'), fn (Builder $query, $directorateId): Builder => $query->where('directorate_id', $directorateId))
+                                    ->pluck('name', 'id')
+                                    ->all())
+                                ->placeholder('Choose Department')
+                                ->searchable()
+                                ->preload(),
+                        ]),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 2])
+                        ->schema([
+                            Forms\Components\Select::make('office_id')
+                                ->label('Office Location')
+                                ->options(fn (): array => Office::query()->pluck('name', 'id')->all())
+                                ->placeholder('Select an office')
+                                ->searchable()
+                                ->preload(),
+                            Forms\Components\TextInput::make('password')
+                                ->label('Password')
+                                ->password()
+                                ->revealable()
+                                ->visibleOn(['create', 'edit'])
+                                ->required(fn (string $operation): bool => $operation === 'create')
+                                ->dehydrated(fn (?string $state): bool => filled($state)),
+                        ]),
                 ])
-                ->columns(2),
-            Forms\Components\Section::make('Organisation Assignment')
-                ->schema([
-                    Forms\Components\Select::make('directorate_id')->relationship('directorate', 'name')->searchable()->preload(),
-                    Forms\Components\Select::make('department_id')->relationship('department', 'name')->searchable()->preload(),
-                    Forms\Components\Select::make('office_id')->relationship('office', 'name')->searchable()->preload(),
-                ])
-                ->columns(3),
-        ]);
+                ->columns(1),
+        ])->columns(1);
     }
 
     public static function table(Table $table): Table
@@ -79,7 +146,8 @@ class PersonnelResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')->label('Name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable(),
-                Tables\Columns\TextColumn::make('user.phone')->label('Phone')->searchable(),
+                Tables\Columns\TextColumn::make('phone')->label('Phone')->state(fn (Personnel $record): ?string => $record->phone ?: $record->user?->phone)->searchable(),
+                Tables\Columns\TextColumn::make('designation')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('user.roles.name')->label('Roles')->badge(),
                 Tables\Columns\TextColumn::make('directorate.name')->label('Directorate')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('department.name')->label('Department')->searchable()->sortable(),

@@ -16,7 +16,9 @@ class Department extends Model
 
     protected $fillable = [
         'ulid',
+        'department_code',
         'name',
+        'function',
         'directorate_id',
         'created_by_id',
         'deleted_by',

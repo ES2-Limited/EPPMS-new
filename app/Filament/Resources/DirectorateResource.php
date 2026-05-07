@@ -27,15 +27,38 @@ class DirectorateResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\Textarea::make('function')->rows(5)->columnSpanFull(),
-        ]);
+            Forms\Components\View::make('filament.components.reference-page-intro')
+                ->viewData(['subtitle' => 'Enter the Information to create a directorate', 'stats' => 'org'])
+                ->visibleOn(['create', 'edit'])
+                ->columnSpanFull(),
+            Forms\Components\Section::make()
+                ->schema([
+                    Forms\Components\TextInput::make('directorate_code')
+                        ->label('Directorate ID')
+                        ->placeholder('Directorate ID')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('name')
+                        ->label('Directorate Name')
+                        ->placeholder('Directorate Name')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Textarea::make('function')
+                        ->label('Directorate Function')
+                        ->placeholder('Directorate Function')
+                        ->required()
+                        ->rows(5)
+                        ->columnSpanFull(),
+                ])
+                ->columns(2),
+        ])->columns(1);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('directorate_code')->label('Directorate ID')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('function')->searchable()->limit(60),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),

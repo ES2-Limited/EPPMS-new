@@ -37,26 +37,73 @@ class ContractorResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('firm_name')
-                ->label('Firm Name')
-                ->required()
-                ->maxLength(255)
-                ->validationMessages(['required' => 'Enter the firm name.'])
-                ->dehydrated(false),
-            Forms\Components\TextInput::make('email')
-                ->email()
-                ->required()
-                ->maxLength(255)
-                ->rule(fn (?Contractor $record) => Rule::unique('users', 'email')->ignore($record?->user_id))
-                ->validationMessages([
-                    'required' => 'Enter the firm email address.',
-                    'email' => 'Enter a valid firm email address.',
-                    'unique' => 'This email address is already in use.',
+            Forms\Components\View::make('filament.components.reference-page-intro')
+                ->viewData(['stats' => 'firm'])
+                ->visibleOn(['create', 'edit'])
+                ->columnSpanFull(),
+            Forms\Components\Section::make('Firm Credentials')
+                ->schema([
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 2])
+                        ->schema([
+                            Forms\Components\TextInput::make('firm_name')
+                                ->label('Name')
+                                ->placeholder('Name of Firm')
+                                ->required()
+                                ->maxLength(255)
+                                ->validationMessages(['required' => 'Enter the firm name.']),
+                            Forms\Components\Select::make('firm_type_id')
+                                ->label('Firm Type')
+                                ->options(static::firmTypeOptions())
+                                ->placeholder('-SELECT Firm Type-')
+                                ->required()
+                                ->native(false),
+                        ]),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 2])
+                        ->schema([
+                            Forms\Components\TextInput::make('email')
+                                ->label('Email')
+                                ->placeholder('email@example.com')
+                                ->email()
+                                ->required()
+                                ->maxLength(255)
+                                ->rule(fn (?Contractor $record) => Rule::unique('users', 'email')->ignore($record?->user_id))
+                                ->validationMessages([
+                                    'required' => 'Enter the firm email address.',
+                                    'email' => 'Enter a valid firm email address.',
+                                    'unique' => 'This email address is already in use.',
+                                ]),
+                            Forms\Components\TextInput::make('phone')
+                                ->label('Phone Number')
+                                ->placeholder('Phone Number')
+                                ->tel()
+                                ->minLength(7)
+                                ->maxLength(30)
+                                ->required(),
+                        ]),
+                    Forms\Components\Grid::make(['default' => 1, 'md' => 2])
+                        ->schema([
+                            Forms\Components\TextInput::make('password')
+                                ->label('Password')
+                                ->password()
+                                ->revealable()
+                                ->visibleOn(['create', 'edit'])
+                                ->required(fn (string $operation): bool => $operation === 'create')
+                                ->dehydrated(fn (?string $state): bool => filled($state)),
+                            Forms\Components\TextInput::make('website')
+                                ->label('Website')
+                                ->placeholder('www.contractor.com')
+                                ->maxLength(255)
+                                ->regex('/^(https?:\/\/)?([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/.*)?$/'),
+                        ]),
+                    Forms\Components\FileUpload::make('logo')
+                        ->label('Logo')
+                        ->disk('public')
+                        ->directory('firms')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png'])
+                        ->columnSpanFull(),
                 ])
-                ->dehydrated(false),
-            Forms\Components\TextInput::make('phone')->tel()->maxLength(30)->dehydrated(false),
-            Forms\Components\Select::make('firm_type_id')->label('Firm Type')->options(static::firmTypeOptions())->required()->native(false),
-        ])->columns(2);
+                ->columns(1),
+        ])->columns(1);
     }
 
     public static function table(Table $table): Table
@@ -65,9 +112,14 @@ class ContractorResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')->label('Firm Name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable(),
-                Tables\Columns\TextColumn::make('user.phone')->label('Phone')->searchable(),
+                Tables\Columns\TextColumn::make('phone')->label('Phone')->state(fn (Contractor $record): ?string => $record->phone ?: $record->user?->phone)->searchable(),
+                Tables\Columns\TextColumn::make('website')->searchable(),
                 Tables\Columns\TextColumn::make('firm_type_id')->label('Firm Type')->formatStateUsing(fn (int $state): string => $state === Contractor::TYPE_CONSULTANT ? 'Consultant' : 'Contractor')->badge(),
                 Tables\Columns\TextColumn::make('personnel_count')->label('Personnel')->counts('personnel')->sortable(),
+                Tables\Columns\TextColumn::make('project_count')
+                    ->label('Projects')
+                    ->state(fn (Contractor $record): int => $record->projects()->count() + $record->consultantProjects()->count())
+                    ->sortable(false),
                 Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

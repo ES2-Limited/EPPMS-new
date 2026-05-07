@@ -7,25 +7,49 @@ use App\Filament\Resources\ContractorPersonnelResource;
 use App\Mail\PersonnelWelcomeMail;
 use App\Models\ContractorPersonnel;
 use App\Models\User;
+use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Enums\Alignment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Throwable;
 
 class CreateContractorPersonnel extends CreateRecord
 {
     protected static string $resource = ContractorPersonnelResource::class;
 
+    protected static ?string $title = 'Firm Personnel Registration';
+
+    protected function getHeaderActions(): array
+    {
+        return [Actions\Action::make('back')->label('← Back')->url(static::getResource()::getUrl())->link()->color('primary')];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()->label('Create'),
+            $this->getCancelFormAction()
+                ->label('Cancel')
+                ->extraAttributes(['style' => 'background-color: #FCE8EC; color: #9F1239;']),
+        ];
+    }
+
+    public function getFormActionsAlignment(): string|Alignment
+    {
+        return Alignment::End;
+    }
+
     protected function handleRecordCreation(array $data): Model
     {
-        $password = Str::password(12);
+        $password = $data['password'];
+        $name = trim($data['first_name'].' '.$data['last_name']);
 
-        $personnel = DB::transaction(function () use ($data, $password): ContractorPersonnel {
+        $personnel = DB::transaction(function () use ($data, $password, $name): ContractorPersonnel {
             $user = User::query()->create([
-                'name' => $data['name'],
+                'name' => $name,
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
                 'password' => $password,
@@ -36,10 +60,14 @@ class CreateContractorPersonnel extends CreateRecord
             return ContractorPersonnel::query()->create([
                 'user_id' => $user->id,
                 'contractor_id' => $data['contractor_id'],
-                'name' => $data['name'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'other_name' => $data['other_name'] ?? null,
+                'name' => $name,
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
-                'position' => $data['position'] ?? null,
+                'designation' => $data['designation'] ?? null,
+                'position' => $data['designation'] ?? null,
             ]);
         });
 

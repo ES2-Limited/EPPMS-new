@@ -2,10 +2,13 @@
 
 namespace App\Filament\Resources;
 
+use App\Constants\NigeriaStates;
 use App\Filament\Resources\OfficeResource\Pages;
 use App\Models\Office;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -27,10 +30,62 @@ class OfficeResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\TextInput::make('state')->maxLength(255),
-            Forms\Components\Textarea::make('address')->rows(3)->columnSpanFull(),
-        ])->columns(2);
+            Forms\Components\View::make('filament.components.reference-page-intro')
+                ->viewData(['subtitle' => 'Create an Office Information here', 'stats' => 'org'])
+                ->visibleOn(['create', 'edit'])
+                ->columnSpanFull(),
+            Forms\Components\Section::make()
+                ->schema([
+                    Forms\Components\TextInput::make('name')
+                        ->label('Name')
+                        ->placeholder('Office Name')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Select::make('type')
+                        ->label('Type of office Location')
+                        ->options([
+                            'Regional' => 'Regional',
+                            'Headquarter' => 'Headquarter',
+                        ])
+                        ->required()
+                        ->native(false),
+                    Forms\Components\Textarea::make('address')
+                        ->label('Address')
+                        ->placeholder('Address')
+                        ->required()
+                        ->rows(3)
+                        ->columnSpanFull(),
+                    Forms\Components\Select::make('state')
+                        ->label('State')
+                        ->options(NigeriaStates::states())
+                        ->placeholder('-SELECT Office State-')
+                        ->required()
+                        ->searchable()
+                        ->live()
+                        ->afterStateUpdated(fn (Set $set) => $set('lga', null)),
+                    Forms\Components\Select::make('lga')
+                        ->label('L.G.A.')
+                        ->options(fn (Get $get): array => NigeriaStates::lgas($get('state')))
+                        ->placeholder('-SELECT-')
+                        ->required()
+                        ->searchable()
+                        ->native(false),
+                    Forms\Components\TextInput::make('email')
+                        ->label('Email')
+                        ->placeholder(fn (): string => app_organisation()?->email ?? 'office@example.com')
+                        ->email()
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('phone')
+                        ->label('Phone Number')
+                        ->placeholder('Phone Number')
+                        ->tel()
+                        ->minLength(7)
+                        ->maxLength(30)
+                        ->required(),
+                ])
+                ->columns(2),
+        ])->columns(1);
     }
 
     public static function table(Table $table): Table
@@ -38,7 +93,11 @@ class OfficeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('type')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('state')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('lga')->label('L.G.A.')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('email')->searchable(),
+                Tables\Columns\TextColumn::make('phone')->label('Phone Number')->searchable(),
                 Tables\Columns\TextColumn::make('address')->searchable()->limit(45),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])

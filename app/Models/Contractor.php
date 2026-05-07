@@ -15,12 +15,16 @@ class Contractor extends Model
     use HasFactory, HasUlid, HasUserAudits, SoftDeletes;
 
     public const TYPE_CONTRACTOR = 1;
+
     public const TYPE_CONSULTANT = 2;
 
     protected $fillable = [
         'ulid',
         'user_id',
         'firm_type_id',
+        'phone',
+        'website',
+        'logo',
         'created_by_id',
         'deleted_by',
     ];

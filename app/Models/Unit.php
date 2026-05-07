@@ -16,6 +16,7 @@ class Unit extends Model
     protected $fillable = [
         'ulid',
         'name',
+        'function',
         'department_id',
         'created_by_id',
         'deleted_by',

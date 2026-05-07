@@ -17,8 +17,12 @@ class Office extends Model
     protected $fillable = [
         'ulid',
         'name',
+        'type',
         'address',
         'state',
+        'lga',
+        'email',
+        'phone',
         'created_by_id',
         'deleted_by',
     ];
