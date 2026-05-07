@@ -6,6 +6,8 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -55,18 +57,33 @@ class User extends Authenticatable implements FilamentUser
         return true;
     }
 
-    public function personnel()
+    public function personnel(): HasOne
     {
         return $this->hasOne(Personnel::class);
     }
 
-    public function contractor()
+    public function contractor(): HasOne
     {
         return $this->hasOne(Contractor::class);
     }
 
-    public function contractorPersonnel()
+    public function contractorPersonnel(): HasOne
     {
         return $this->hasOne(ContractorPersonnel::class);
+    }
+
+    public function projectChats(): HasMany
+    {
+        return $this->hasMany(ProjectChat::class, 'sender_id');
+    }
+
+    public function milestoneChatMessages(): HasMany
+    {
+        return $this->hasMany(MilestoneChatMessage::class, 'sender_id');
+    }
+
+    public function taskChatMessages(): HasMany
+    {
+        return $this->hasMany(TaskChatMessage::class, 'sender_id');
     }
 }

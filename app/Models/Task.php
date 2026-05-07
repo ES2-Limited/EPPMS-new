@@ -9,6 +9,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Task extends Model
@@ -37,6 +38,21 @@ class Task extends Model
     public function milestone(): BelongsTo
     {
         return $this->belongsTo(Milestone::class);
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(TaskImage::class);
+    }
+
+    public function latestImages(): HasMany
+    {
+        return $this->images()->latest();
+    }
+
+    public function chatMessages(): HasMany
+    {
+        return $this->hasMany(TaskChatMessage::class);
     }
 
     public function mark_as_done(): void

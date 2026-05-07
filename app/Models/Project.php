@@ -17,6 +17,7 @@ class Project extends Model
     use HasFactory, HasUlid, HasUserAudits, SoftDeletes;
 
     public const STATUSES = ['pending', 'in_progress', 'done', 'completed'];
+
     public const DURATION_PERIODS = ['months', 'weeks', 'days'];
 
     protected $fillable = [
@@ -88,6 +89,26 @@ class Project extends Model
     public function projectPersonnel(): HasMany
     {
         return $this->hasMany(ProjectPersonnel::class);
+    }
+
+    public function chats(): HasMany
+    {
+        return $this->hasMany(ProjectChat::class);
+    }
+
+    public function recentTaskImages(int $limit = 5)
+    {
+        return TaskImage::query()
+            ->with(['uploader', 'task'])
+            ->whereHas('task', fn ($task) => $task
+                ->whereNull('deleted_at')
+                ->whereHas('milestone', fn ($milestone) => $milestone
+                    ->where('project_id', $this->id)
+                    ->whereNull('deleted_at')))
+            ->whereNull('deleted_at')
+            ->latest()
+            ->limit($limit)
+            ->get();
     }
 
     public function get_progress(): int

@@ -47,4 +47,14 @@ class Milestone extends Model
     {
         return $this->hasMany(Task::class);
     }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(MilestoneImage::class);
+    }
+
+    public function chatMessages(): HasMany
+    {
+        return $this->hasMany(MilestoneChatMessage::class);
+    }
 }
