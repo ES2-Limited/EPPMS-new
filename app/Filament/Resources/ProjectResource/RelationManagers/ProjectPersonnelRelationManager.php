@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ProjectResource\RelationManagers;
 
 use App\Constants\RoleAndPermissions;
+use App\Filament\Resources\ProjectResource;
 use App\Mail\ProjectAssignmentMail;
 use App\Models\Personnel;
 use App\Models\ProjectPersonnel;
@@ -68,7 +69,13 @@ class ProjectPersonnelRelationManager extends RelationManager
     protected function sendAssignmentEmail(ProjectPersonnel $record): void
     {
         try {
-            Mail::to($record->personnel->user)->send(new ProjectAssignmentMail($record->personnel->user, $record->project, $record->project_role));
+            if (! $record->personnel?->user) {
+                return;
+            }
+
+            $projectUrl = ProjectResource::getUrl('view', ['record' => $record->project]);
+
+            Mail::to($record->personnel->user)->queue(new ProjectAssignmentMail($record->personnel->user, $record->project, $record->project_role, $projectUrl));
         } catch (Throwable $exception) {
             Log::warning('Project assignment email failed.', [
                 'project_personnel_id' => $record->id,

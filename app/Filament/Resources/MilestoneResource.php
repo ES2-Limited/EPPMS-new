@@ -72,6 +72,7 @@ class MilestoneResource extends Resource
         return [
             'index' => Pages\ListMilestones::route('/'),
             'create' => Pages\CreateMilestone::route('/create'),
+            'report' => Pages\MilestoneReport::route('/{record}/report'),
             'view' => Pages\ViewMilestone::route('/{record}'),
             'edit' => Pages\EditMilestone::route('/{record}/edit'),
         ];

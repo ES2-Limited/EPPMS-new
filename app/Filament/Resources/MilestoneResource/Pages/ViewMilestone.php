@@ -128,6 +128,15 @@ class ViewMilestone extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [Actions\EditAction::make(), Actions\DeleteAction::make(), Actions\RestoreAction::make(), Actions\ForceDeleteAction::make()];
+        return [
+            Actions\Action::make('report')
+                ->label('Milestone Report')
+                ->icon('heroicon-o-document-text')
+                ->url(fn (): string => MilestoneResource::getUrl('report', ['record' => $this->record])),
+            Actions\EditAction::make(),
+            Actions\DeleteAction::make(),
+            Actions\RestoreAction::make(),
+            Actions\ForceDeleteAction::make(),
+        ];
     }
 }

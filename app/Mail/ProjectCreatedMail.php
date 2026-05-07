@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use App\Models\Project;
-use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -11,24 +10,22 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ProjectAssignmentMail extends Mailable implements ShouldQueue
+class ProjectCreatedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public User $user,
         public Project $project,
-        public string $projectRole,
         public ?string $projectUrl = null,
     ) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Project Assignment: '.$this->project->name);
+        return new Envelope(subject: 'New Project Created: '.$this->project->name);
     }
 
     public function content(): Content
     {
-        return new Content(view: 'emails.project-assignment');
+        return new Content(view: 'emails.project-created');
     }
 }

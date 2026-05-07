@@ -64,3 +64,13 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## ePPMS Queue Deployment Notes
+
+Set `QUEUE_CONNECTION=database` when queued email delivery should use Laravel's database queue. The jobs table is included in the application migrations.
+
+For cPanel deployments, configure a cron entry similar to:
+
+```bash
+cd /home/username/public_html/demo2.eppms.ng && php artisan queue:work --stop-when-empty
+```
