@@ -1,12 +1,12 @@
 @php($organisation = app_organisation())
 
-@if ($organisation?->logo)
-    <p><img src="{{ asset('storage/'.$organisation->logo) }}" alt="{{ $organisation->name }}" style="height: 56px; width: auto;"></p>
+@if (app_organisation_logo_url())
+    <p><img src="{{ app_organisation_logo_url() }}" alt="{{ $organisation?->name ?? 'ePPMS' }}" style="height: 56px; width: auto;"></p>
 @endif
 
 <p>Hello,</p>
 
-<p>A new {{ $organisation?->name ?: 'ePPMS' }} project has been created.</p>
+<p>A new {{ $organisation?->name ?? 'ePPMS' }} project has been created.</p>
 
 <p>
     Project: <strong>{{ $project->name }}</strong><br>

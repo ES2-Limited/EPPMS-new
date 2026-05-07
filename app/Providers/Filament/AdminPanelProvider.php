@@ -28,10 +28,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName(fn (): string => app_organisation()?->name ?: 'ePPMS')
-            ->brandLogo(fn (): string => app_organisation()?->logo ? asset('storage/'.app_organisation()->logo) : asset('images/eppms-default-icon.svg'))
+            ->brandName(fn (): string => app_organisation()?->name ?? 'ePPMS')
+            ->brandLogo(fn (): ?string => app_organisation_logo_url())
             ->brandLogoHeight('2.5rem')
-            ->favicon(fn (): string => app_organisation()?->logo ? asset('storage/'.app_organisation()->logo) : asset('images/eppms-default-icon.svg'))
+            ->favicon(fn (): string => app_organisation_logo_url() ?? asset('images/eppms-default-icon.svg'))
             ->colors([
                 'primary' => Color::Amber,
             ])

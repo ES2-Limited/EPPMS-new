@@ -1,6 +1,12 @@
+@php($organisation = app_organisation())
+
+@if (app_organisation_logo_url())
+    <p><img src="{{ app_organisation_logo_url() }}" alt="{{ $organisation?->name ?? 'ePPMS' }}" style="height: 56px; width: auto;"></p>
+@endif
+
 <p>Hello {{ $user->name }},</p>
 
-<p>Your {{ app_organisation()?->name ?: 'ePPMS' }} account has been created for {{ $accountType }} access.</p>
+<p>Your {{ $organisation?->name ?? 'ePPMS' }} account has been created for {{ $accountType ?? $organisation?->name ?? 'ePPMS' }} access.</p>
 
 <p>
     App URL: <a href="{{ config('app.url') }}">{{ config('app.url') }}</a><br>

@@ -28,8 +28,8 @@
             </div>
 
             <div class="flex items-center gap-3 text-right">
-                @if ($organisation?->logo)
-                    <img src="{{ asset('storage/'.$organisation->logo) }}" alt="{{ $organisation->name }}" class="h-14 w-14 rounded object-contain">
+                @if (app_organisation_logo_url())
+                    <img src="{{ app_organisation_logo_url() }}" alt="{{ $organisation?->name ?? 'ePPMS' }}" class="h-14 w-14 rounded object-contain">
                 @endif
                 <div>
                     <div class="font-semibold">{{ $organisation?->name ?? 'ePPMS' }}</div>

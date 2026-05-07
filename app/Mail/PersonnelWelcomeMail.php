@@ -16,13 +16,13 @@ class PersonnelWelcomeMail extends Mailable
     public function __construct(
         public User $user,
         public string $password,
-        public string $accountType = 'NCAA ePPMS',
+        public ?string $accountType = null,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to '.$this->accountType,
+            subject: 'Welcome to '.($this->accountType ?? app_organisation()?->name ?? 'ePPMS'),
         );
     }
 

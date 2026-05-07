@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 
 class Organization extends Model
 {
@@ -23,8 +22,5 @@ class Organization extends Model
                 throw new \RuntimeException('Only one organization record may exist.');
             }
         });
-
-        static::saved(fn (): bool => Cache::forget('app_organisation'));
-        static::deleted(fn (): bool => Cache::forget('app_organisation'));
     }
 }
