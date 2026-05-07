@@ -2,20 +2,29 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Constants\RoleAndPermissions;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class OrganizationPolicy
 {
     use HandlesAuthorization;
 
+    protected function canManage(User $user): bool
+    {
+        return $user->hasAnyRole([
+            RoleAndPermissions::ADMIN,
+            RoleAndPermissions::ORGANIZATION_ADMIN,
+        ]);
+    }
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -23,7 +32,7 @@ class OrganizationPolicy
      */
     public function view(User $user, Organization $organization): bool
     {
-        return $user->can('view_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -31,7 +40,7 @@ class OrganizationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -39,7 +48,7 @@ class OrganizationPolicy
      */
     public function update(User $user, Organization $organization): bool
     {
-        return $user->can('update_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -47,7 +56,7 @@ class OrganizationPolicy
      */
     public function delete(User $user, Organization $organization): bool
     {
-        return $user->can('delete_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -55,7 +64,7 @@ class OrganizationPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -63,7 +72,7 @@ class OrganizationPolicy
      */
     public function forceDelete(User $user, Organization $organization): bool
     {
-        return $user->can('force_delete_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -71,7 +80,7 @@ class OrganizationPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -79,7 +88,7 @@ class OrganizationPolicy
      */
     public function restore(User $user, Organization $organization): bool
     {
-        return $user->can('restore_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -87,7 +96,7 @@ class OrganizationPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -95,7 +104,7 @@ class OrganizationPolicy
      */
     public function replicate(User $user, Organization $organization): bool
     {
-        return $user->can('replicate_organization');
+        return $this->canManage($user);
     }
 
     /**
@@ -103,6 +112,6 @@ class OrganizationPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_organization');
+        return $this->canManage($user);
     }
 }

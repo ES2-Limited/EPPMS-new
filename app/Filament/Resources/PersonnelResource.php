@@ -26,7 +26,7 @@ class PersonnelResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Personnels';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 6;
 
     public static function systemRoleOptions(): array
     {
@@ -42,8 +42,19 @@ class PersonnelResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('first_name')->required()->maxLength(255)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
                     Forms\Components\TextInput::make('last_name')->required()->maxLength(255)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                    Forms\Components\TextInput::make('email')->email()->required()->unique('users', 'email')->maxLength(255)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                    Forms\Components\TextInput::make('phone')->tel()->maxLength(255)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
+                    Forms\Components\TextInput::make('email')
+                        ->email()
+                        ->required()
+                        ->unique('users', 'email')
+                        ->maxLength(255)
+                        ->validationMessages([
+                            'required' => 'Enter the personnel email address.',
+                            'email' => 'Enter a valid personnel email address.',
+                            'unique' => 'This email address is already in use.',
+                        ])
+                        ->visibleOn('create')
+                        ->dehydrated(fn (string $operation): bool => $operation === 'create'),
+                    Forms\Components\TextInput::make('phone')->tel()->maxLength(30)->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
                     Forms\Components\Select::make('role')->options(static::systemRoleOptions())->required()->searchable()->visibleOn('create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
                     Forms\Components\Placeholder::make('user.name')->label('Name')->content(fn (?Personnel $record): string => $record?->user?->name ?? '-')->visibleOn(['edit', 'view']),
                     Forms\Components\Placeholder::make('user.email')->label('Email')->content(fn (?Personnel $record): string => $record?->user?->email ?? '-')->visibleOn(['edit', 'view']),
@@ -71,6 +82,7 @@ class PersonnelResource extends Resource
                 Tables\Columns\TextColumn::make('directorate.name')->label('Directorate')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('department.name')->label('Department')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('office.name')->label('Office')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('directorate_id')->label('Directorate')->options(fn (): array => Directorate::query()->pluck('name', 'id')->all()),

@@ -74,3 +74,100 @@ For cPanel deployments, configure a cron entry similar to:
 ```bash
 cd /home/username/public_html/demo2.eppms.ng && php artisan queue:work --stop-when-empty
 ```
+
+## UAT Checklist
+
+- Sign in with the seeded admin account: `dsd@eppms.ng` / `Admin@1234`.
+- Configure organisation name, logo, address, phone, email, and website from Organisation Settings.
+- Create office locations.
+- Create directorates.
+- Create departments and link them to directorates.
+- Create units and link them to departments.
+- Create personnel records and assign the correct system roles.
+- Create contractor and consultant firm accounts.
+- Create contractor personnel accounts and link them to parent firms.
+- Create a project with contractor, consultant, office, directorate, department, award, and finance details.
+- Add project milestones.
+- Add tasks under milestones.
+- Assign project personnel as project manager or project member.
+- Verify only allowed internal users can mark tasks as done.
+- Verify contractors, contractor personnel, and consultants cannot mark tasks as done.
+- Upload task images and confirm they appear on task pages.
+- Upload milestone images and confirm they appear on milestone pages.
+- Confirm the project gallery shows recent task images.
+- Add comments at project, milestone, and task levels.
+- Confirm dashboard stats respect role/project scope.
+- Confirm project histogram respects role/project scope and filters.
+- Generate a project report for a 100% complete project.
+- Generate a milestone report.
+- Generate the personnel report as an authorised internal role.
+- Confirm queued emails are written to the database queue when `QUEUE_CONNECTION=database` is enabled.
+- Verify role-based access for admin, organization admin, management admin, auditor, scoped internal users, contractors, contractor personnel, and consultants.
+
+## Windows IIS Production Notes
+
+Install optimized dependencies:
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
+
+Configure `.env` for SQL Server:
+
+```env
+DB_CONNECTION=sqlsrv
+DB_HOST=your-sql-server-host
+DB_PORT=1433
+DB_DATABASE=eppms
+DB_USERNAME=your-sql-server-user
+DB_PASSWORD=your-sql-server-password
+```
+
+Required PHP extensions include `sqlsrv` and `pdo_sqlsrv`.
+
+For a fresh install, generate the application key:
+
+```bash
+php artisan key:generate
+```
+
+Run production migrations and seed roles:
+
+```bash
+php artisan migrate --force
+php artisan db:seed --class=RolesAndPermissionsSeeder --force
+```
+
+Create the Windows storage junction from the project root:
+
+```bat
+mklink /J public\storage storage\app\public
+```
+
+Grant `IIS_IUSRS` write permissions to:
+
+- `storage`
+- `bootstrap/cache`
+
+Build and refresh production caches:
+
+```bash
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan permission:cache-reset
+php artisan shield:generate --all --panel=admin --option=permissions --minimal --no-interaction
+```
+
+Restart IIS:
+
+```bat
+iisreset
+```
+
+For queued email processing on Windows, run a scheduled task that executes:
+
+```bash
+php artisan queue:work --stop-when-empty
+```

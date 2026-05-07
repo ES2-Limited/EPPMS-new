@@ -23,8 +23,8 @@ class TasksRelationManager extends RelationManager
             Forms\Components\Textarea::make('description')->rows(3)->columnSpanFull(),
             Forms\Components\Select::make('status')->options(['pending' => 'Pending', 'done' => 'Done'])->default('pending')->required()->native(false),
             Forms\Components\DatePicker::make('start_date'),
-            Forms\Components\DatePicker::make('due_date'),
-            Forms\Components\TextInput::make('cost')->numeric()->default(0)->required(),
+            Forms\Components\DatePicker::make('due_date')->afterOrEqual('start_date'),
+            Forms\Components\TextInput::make('cost')->numeric()->minValue(0)->default(0)->required(),
         ])->columns(2);
     }
 
@@ -34,13 +34,10 @@ class TasksRelationManager extends RelationManager
             ->modifyQueryUsing(fn ($query) => $query->withoutGlobalScopes([SoftDeletingScope::class]))
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('milestone.name')->label('Milestone')->searchable(),
-                Tables\Columns\TextColumn::make('milestone.project.name')->label('Project')->searchable(),
                 Tables\Columns\TextColumn::make('status')->badge(),
                 Tables\Columns\TextColumn::make('start_date')->date(),
                 Tables\Columns\TextColumn::make('due_date')->date(),
                 Tables\Columns\TextColumn::make('cost')->money('NGN'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->filters([Tables\Filters\TrashedFilter::make()])
             ->headerActions([
@@ -59,8 +56,6 @@ class TasksRelationManager extends RelationManager
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
             ]);
     }
 }

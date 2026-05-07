@@ -46,16 +46,16 @@ class ProjectResource extends Resource
                 ->columns(2),
             Forms\Components\Section::make('Financials')
                 ->schema([
-                    Forms\Components\TextInput::make('cost')->numeric()->default(0)->required()->live(onBlur: true),
-                    Forms\Components\TextInput::make('total_paid')->numeric()->default(0)->required()->live(onBlur: true),
+                    Forms\Components\TextInput::make('cost')->numeric()->minValue(0)->default(0)->required()->live(onBlur: true),
+                    Forms\Components\TextInput::make('total_paid')->numeric()->minValue(0)->default(0)->required()->live(onBlur: true),
                     Forms\Components\TextInput::make('total_left')->numeric()->disabled()->dehydrated(false)->formatStateUsing(fn (?Project $record, $state): string => number_format((float) ($record?->total_left ?? $state ?? 0), 2)),
                 ])
                 ->columns(3),
             Forms\Components\Section::make('Award')
                 ->schema([
                     Forms\Components\DatePicker::make('award_date'),
-                    Forms\Components\TextInput::make('duration')->integer()->minValue(1),
-                    Forms\Components\Select::make('duration_period')->options(array_combine(Project::DURATION_PERIODS, array_map('ucfirst', Project::DURATION_PERIODS)))->native(false),
+                    Forms\Components\TextInput::make('duration')->integer()->minValue(1)->requiredWith('duration_period'),
+                    Forms\Components\Select::make('duration_period')->options(array_combine(Project::DURATION_PERIODS, array_map('ucfirst', Project::DURATION_PERIODS)))->requiredWith('duration')->native(false),
                     Forms\Components\FileUpload::make('award_letter')
                         ->disk('public')
                         ->directory('project_files')

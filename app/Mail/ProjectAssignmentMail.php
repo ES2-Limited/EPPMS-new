@@ -24,7 +24,7 @@ class ProjectAssignmentMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Project Assignment: '.$this->project->name);
+        return new Envelope(subject: (app_organisation()->name ?? 'ePPMS').' Project Assignment: '.$this->project->name);
     }
 
     public function content(): Content

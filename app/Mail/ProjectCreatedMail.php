@@ -21,7 +21,7 @@ class ProjectCreatedMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'New Project Created: '.$this->project->name);
+        return new Envelope(subject: (app_organisation()->name ?? 'ePPMS').' New Project Created: '.$this->project->name);
     }
 
     public function content(): Content

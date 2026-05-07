@@ -16,7 +16,9 @@ class OrganizationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static ?string $navigationGroup = 'Administration';
+    protected static ?string $navigationGroup = 'Organisation';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'Organisation';
 

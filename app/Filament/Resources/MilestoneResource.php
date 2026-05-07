@@ -25,7 +25,7 @@ class MilestoneResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('project_id')->relationship('project', 'name')->searchable()->preload()->required(),
             Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\TextInput::make('amount')->numeric()->default(0)->required(),
+            Forms\Components\TextInput::make('amount')->numeric()->minValue(0)->default(0)->required(),
             Forms\Components\Textarea::make('description')->rows(3)->columnSpanFull(),
         ])->columns(2);
     }

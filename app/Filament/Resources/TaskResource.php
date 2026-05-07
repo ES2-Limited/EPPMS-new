@@ -29,8 +29,8 @@ class TaskResource extends Resource
             Forms\Components\Textarea::make('description')->rows(3)->columnSpanFull(),
             Forms\Components\Select::make('status')->options(['pending' => 'Pending', 'done' => 'Done'])->default('pending')->required()->native(false),
             Forms\Components\DatePicker::make('start_date'),
-            Forms\Components\DatePicker::make('due_date'),
-            Forms\Components\TextInput::make('cost')->numeric()->default(0)->required(),
+            Forms\Components\DatePicker::make('due_date')->afterOrEqual('start_date'),
+            Forms\Components\TextInput::make('cost')->numeric()->minValue(0)->default(0)->required(),
         ])->columns(2);
     }
 

@@ -28,11 +28,11 @@
             </div>
 
             <div class="flex items-center gap-3 text-right">
-                @if (app_organisation_logo_url())
-                    <img src="{{ app_organisation_logo_url() }}" alt="{{ $organisation?->name ?? 'ePPMS' }}" class="h-14 w-14 rounded object-contain">
+                @if ($organisation?->logo_url)
+                    <img src="{{ $organisation->logo_url }}" alt="{{ app_organisation()->name ?? 'ePPMS' }}" class="h-14 w-14 rounded object-contain">
                 @endif
                 <div>
-                    <div class="font-semibold">{{ $organisation?->name ?? 'ePPMS' }}</div>
+                    <div class="font-semibold">{{ app_organisation()->name ?? 'ePPMS' }}</div>
                     <div class="text-sm text-gray-500 dark:text-gray-400">{{ $organisation?->email }}</div>
                 </div>
             </div>

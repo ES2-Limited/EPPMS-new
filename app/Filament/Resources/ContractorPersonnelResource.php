@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
 
 class ContractorPersonnelResource extends Resource
 {
@@ -36,8 +37,17 @@ class ContractorPersonnelResource extends Resource
                 ->preload()
                 ->required(),
             Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\TextInput::make('email')->email()->required()->maxLength(255),
-            Forms\Components\TextInput::make('phone')->tel()->maxLength(255),
+            Forms\Components\TextInput::make('email')
+                ->email()
+                ->required()
+                ->maxLength(255)
+                ->rule(fn (?ContractorPersonnel $record) => Rule::unique('users', 'email')->ignore($record?->user_id))
+                ->validationMessages([
+                    'required' => 'Enter the personnel email address.',
+                    'email' => 'Enter a valid personnel email address.',
+                    'unique' => 'This email address is already in use.',
+                ]),
+            Forms\Components\TextInput::make('phone')->tel()->maxLength(30),
             Forms\Components\TextInput::make('position')->maxLength(255),
         ])->columns(2);
     }
@@ -51,7 +61,7 @@ class ContractorPersonnelResource extends Resource
                 Tables\Columns\TextColumn::make('position')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->searchable(),
                 Tables\Columns\TextColumn::make('phone')->searchable(),
-                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('contractor_id')

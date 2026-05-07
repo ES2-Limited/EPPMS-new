@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\ProjectResource\RelationManagers;
 
+use App\Filament\Resources\MilestoneResource;
+use App\Models\Milestone;
 use App\Support\ProjectAccess;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -18,7 +20,7 @@ class MilestonesRelationManager extends RelationManager
     {
         return $form->schema([
             Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\TextInput::make('amount')->numeric()->default(0)->required(),
+            Forms\Components\TextInput::make('amount')->numeric()->minValue(0)->default(0)->required(),
             Forms\Components\Textarea::make('description')->rows(3)->columnSpanFull(),
         ])->columns(2);
     }
@@ -30,10 +32,9 @@ class MilestonesRelationManager extends RelationManager
             ->modifyQueryUsing(fn ($query) => $query->withoutGlobalScopes([SoftDeletingScope::class]))
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('project.name')->label('Project')->searchable(),
                 Tables\Columns\TextColumn::make('amount')->money('NGN')->sortable(),
+                Tables\Columns\TextColumn::make('description')->searchable()->limit(60),
                 Tables\Columns\TextColumn::make('tasks_count')->label('Tasks')->counts('tasks')->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->filters([Tables\Filters\TrashedFilter::make()])
             ->headerActions([
@@ -41,11 +42,10 @@ class MilestonesRelationManager extends RelationManager
                     ->authorize(fn (): bool => auth()->check() && ProjectAccess::canManageMilestone(auth()->user(), $this->getOwnerRecord())),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (Milestone $record): string => MilestoneResource::getUrl('view', ['record' => $record])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-                Tables\Actions\ForceDeleteAction::make(),
             ]);
     }
 }

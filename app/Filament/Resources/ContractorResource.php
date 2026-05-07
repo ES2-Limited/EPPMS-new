@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
 
 class ContractorResource extends Resource
 {
@@ -36,9 +37,24 @@ class ContractorResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('firm_name')->label('Firm Name')->required()->maxLength(255)->dehydrated(false),
-            Forms\Components\TextInput::make('email')->email()->required()->maxLength(255)->dehydrated(false),
-            Forms\Components\TextInput::make('phone')->tel()->maxLength(255)->dehydrated(false),
+            Forms\Components\TextInput::make('firm_name')
+                ->label('Firm Name')
+                ->required()
+                ->maxLength(255)
+                ->validationMessages(['required' => 'Enter the firm name.'])
+                ->dehydrated(false),
+            Forms\Components\TextInput::make('email')
+                ->email()
+                ->required()
+                ->maxLength(255)
+                ->rule(fn (?Contractor $record) => Rule::unique('users', 'email')->ignore($record?->user_id))
+                ->validationMessages([
+                    'required' => 'Enter the firm email address.',
+                    'email' => 'Enter a valid firm email address.',
+                    'unique' => 'This email address is already in use.',
+                ])
+                ->dehydrated(false),
+            Forms\Components\TextInput::make('phone')->tel()->maxLength(30)->dehydrated(false),
             Forms\Components\Select::make('firm_type_id')->label('Firm Type')->options(static::firmTypeOptions())->required()->native(false),
         ])->columns(2);
     }
@@ -52,7 +68,7 @@ class ContractorResource extends Resource
                 Tables\Columns\TextColumn::make('user.phone')->label('Phone')->searchable(),
                 Tables\Columns\TextColumn::make('firm_type_id')->label('Firm Type')->formatStateUsing(fn (int $state): string => $state === Contractor::TYPE_CONSULTANT ? 'Consultant' : 'Contractor')->badge(),
                 Tables\Columns\TextColumn::make('personnel_count')->label('Personnel')->counts('personnel')->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('firm_type_id')->label('Firm Type')->options(static::firmTypeOptions()),

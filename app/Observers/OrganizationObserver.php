@@ -29,6 +29,6 @@ class OrganizationObserver
 
     protected function clearCache(): void
     {
-        Cache::forget('app_organisation');
+        Cache::forget('organisation');
     }
 }

@@ -22,7 +22,7 @@ class PersonnelWelcomeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to '.($this->accountType ?? app_organisation()?->name ?? 'ePPMS'),
+            subject: (app_organisation()->name ?? 'ePPMS').' account access',
         );
     }
 
