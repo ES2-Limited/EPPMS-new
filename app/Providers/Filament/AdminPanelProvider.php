@@ -4,12 +4,14 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
+use App\Filament\Resources\ProjectResource;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -67,11 +69,19 @@ class AdminPanelProvider extends PanelProvider
                 ')
             )
             ->navigationGroups([
-                NavigationGroup::make('Organisation'),
-                NavigationGroup::make('Firm'),
-                NavigationGroup::make('Project'),
-                NavigationGroup::make('Reports'),
-                NavigationGroup::make('Settings'),
+                NavigationGroup::make('Organisation')->collapsible(false),
+                NavigationGroup::make('Firm')->collapsible(false),
+                NavigationGroup::make('Project')->collapsible(false),
+                NavigationGroup::make('Reports')->collapsible(false),
+                NavigationGroup::make('Settings')->collapsible(false),
+            ])
+            ->navigationItems([
+                NavigationItem::make('Add New Project')
+                    ->url(fn (): string => ProjectResource::getUrl('create'))
+                    ->icon('heroicon-o-plus-circle')
+                    ->group('Project')
+                    ->sort(2)
+                    ->isActiveWhen(fn (): bool => request()->routeIs('filament.admin.resources.projects.create')),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

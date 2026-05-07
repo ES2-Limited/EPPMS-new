@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\MilestoneResource\Pages;
 
 use App\Filament\Resources\MilestoneResource;
+use App\Filament\Resources\ProjectResource;
 use App\Models\MilestoneChatMessage;
 use App\Models\MilestoneImage;
+use App\Models\Task;
 use App\Support\ProjectAccess;
 use Filament\Actions;
 use Filament\Forms;
@@ -67,27 +69,28 @@ class ViewMilestone extends ViewRecord
     {
         return [
             ...parent::getForms(),
-            'commentForm' => $this->commentForm($this->makeForm()),
-            'imageUploadForm' => $this->imageUploadForm($this->makeForm()),
+            'commentForm'      => $this->commentForm($this->makeForm()),
+            'imageUploadForm'  => $this->imageUploadForm($this->makeForm()),
         ];
     }
 
     public function postComment(): void
     {
         abort_unless(auth()->check(), 403);
-        abort_unless($this->record->project && ProjectAccess::canViewProject(auth()->user(), $this->record->project), 403);
+        abort_unless(
+            $this->record->project && ProjectAccess::canViewProject(auth()->user(), $this->record->project),
+            403
+        );
 
         $message = trim((string) ($this->commentData['message'] ?? ''));
 
-        validator(['message' => $message], [
-            'message' => ['required', 'string', 'max:5000'],
-        ])->validate();
+        validator(['message' => $message], ['message' => ['required', 'string', 'max:5000']])->validate();
 
         MilestoneChatMessage::query()->create([
-            'milestone_id' => $this->record->id,
-            'sender_id' => auth()->id(),
-            'message' => $message,
-            'created_by_id' => auth()->id(),
+            'milestone_id'   => $this->record->id,
+            'sender_id'      => auth()->id(),
+            'message'        => $message,
+            'created_by_id'  => auth()->id(),
         ]);
 
         $this->commentData = [];
@@ -96,10 +99,29 @@ class ViewMilestone extends ViewRecord
         Notification::make()->title('Comment posted')->success()->send();
     }
 
+    public function markTaskDone(int $taskId): void
+    {
+        $task = Task::find($taskId);
+
+        if (! $task) {
+            return;
+        }
+
+        abort_unless(auth()->check(), 403);
+        abort_unless(Task::canBeMarkedDoneBy(auth()->user(), $task), 403);
+
+        $task->mark_as_done();
+
+        Notification::make()->title('Task marked as done')->success()->send();
+    }
+
     public function uploadImages(): void
     {
         abort_unless(auth()->check(), 403);
-        abort_unless($this->record->project && ProjectAccess::canViewProject(auth()->user(), $this->record->project), 403);
+        abort_unless(
+            $this->record->project && ProjectAccess::canViewProject(auth()->user(), $this->record->project),
+            403
+        );
 
         $data = $this->imageUploadForm->getState();
 
@@ -111,12 +133,12 @@ class ViewMilestone extends ViewRecord
             $path = $file->store('milestone_images', 'public');
 
             MilestoneImage::query()->create([
-                'milestone_id' => $this->record->id,
-                'uploader_id' => auth()->id(),
-                'name' => $path,
+                'milestone_id'  => $this->record->id,
+                'uploader_id'   => auth()->id(),
+                'name'          => $path,
                 'original_name' => $file->getClientOriginalName(),
-                'mime_type' => Storage::disk('public')->mimeType($path),
-                'size' => Storage::disk('public')->size($path),
+                'mime_type'     => Storage::disk('public')->mimeType($path),
+                'size'          => Storage::disk('public')->size($path),
             ]);
         }
 
@@ -138,5 +160,21 @@ class ViewMilestone extends ViewRecord
             Actions\RestoreAction::make(),
             Actions\ForceDeleteAction::make(),
         ];
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        $project = $this->record->project;
+
+        $breadcrumbs = [];
+
+        if ($project) {
+            $breadcrumbs[ProjectResource::getUrl('view', ['record' => $project])] = $project->name;
+            $breadcrumbs[MilestoneResource::getUrl('index', ['project_id' => $project->id])] = 'Milestones';
+        }
+
+        $breadcrumbs[] = $this->record->name;
+
+        return $breadcrumbs;
     }
 }

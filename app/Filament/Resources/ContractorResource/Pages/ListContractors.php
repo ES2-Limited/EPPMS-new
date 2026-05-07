@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ContractorResource\Pages;
 
 use App\Filament\Resources\ContractorResource;
+use App\Filament\Widgets\FirmStatsWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -13,5 +14,10 @@ class ListContractors extends ListRecords
     protected function getHeaderActions(): array
     {
         return [Actions\CreateAction::make()];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [FirmStatsWidget::class];
     }
 }

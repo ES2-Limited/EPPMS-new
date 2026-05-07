@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasUlid;
 use App\Models\Concerns\HasUserAudits;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,8 @@ class Project extends Model
     public const STATUSES = ['pending', 'in_progress', 'done', 'completed'];
 
     public const DURATION_PERIODS = ['months', 'weeks', 'days'];
+
+    public const PROJECT_TYPES = ['Works', 'Goods', 'Services'];
 
     protected $fillable = [
         'ulid',
@@ -38,6 +41,7 @@ class Project extends Model
         'consultant_id',
         'priority',
         'description',
+        'project_type',
         'created_by_id',
         'deleted_by',
     ];
@@ -109,6 +113,47 @@ class Project extends Model
             ->latest()
             ->limit($limit)
             ->get();
+    }
+
+    public function getEndDateAttribute(): Carbon
+    {
+        if (! $this->award_date || ! $this->duration || ! in_array($this->duration_period, self::DURATION_PERIODS, true)) {
+            return Carbon::now();
+        }
+
+        $end = $this->award_date->copy();
+
+        return match ($this->duration_period) {
+            'months' => $end->addMonths($this->duration),
+            'weeks'  => $end->addWeeks($this->duration),
+            'days'   => $end->addDays($this->duration),
+            default  => $end,
+        };
+    }
+
+    public function getMilestoneAmountUsedAttribute(): float
+    {
+        return (float) $this->milestones()->whereNull('deleted_at')->sum('amount');
+    }
+
+    public function getMilestoneAmountRemainingAttribute(): float
+    {
+        return max(0.0, (float) $this->cost - $this->milestone_amount_used);
+    }
+
+    public function hasMilestones(): bool
+    {
+        return $this->milestones()->whereNull('deleted_at')->exists();
+    }
+
+    public function hasTasks(): bool
+    {
+        return Task::query()
+            ->whereNull('deleted_at')
+            ->whereHas('milestone', fn ($q) => $q
+                ->where('project_id', $this->id)
+                ->whereNull('deleted_at'))
+            ->exists();
     }
 
     public function get_progress(): int

@@ -21,6 +21,8 @@ class UnitResource extends Resource
 
     protected static ?string $navigationGroup = 'Organisation';
 
+    protected static ?string $navigationLabel = 'Unit';
+
     protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form

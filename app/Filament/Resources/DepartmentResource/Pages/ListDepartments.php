@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DepartmentResource\Pages;
 
 use App\Filament\Resources\DepartmentResource;
+use App\Filament\Widgets\OrgStatsBarWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -13,5 +14,10 @@ class ListDepartments extends ListRecords
     protected function getHeaderActions(): array
     {
         return [Actions\CreateAction::make()];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [OrgStatsBarWidget::class];
     }
 }

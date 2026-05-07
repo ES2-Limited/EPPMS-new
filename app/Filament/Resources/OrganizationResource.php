@@ -18,6 +18,8 @@ class OrganizationResource extends Resource
 
     protected static ?string $navigationGroup = 'Organisation';
 
+    protected static ?string $navigationLabel = 'Organisation Registration';
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'Organisation';

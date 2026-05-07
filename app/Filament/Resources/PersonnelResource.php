@@ -24,6 +24,8 @@ class PersonnelResource extends Resource
 
     protected static ?string $navigationGroup = 'Organisation';
 
+    protected static ?string $navigationLabel = 'Personnels';
+
     protected static ?string $pluralModelLabel = 'Personnels';
 
     protected static ?int $navigationSort = 6;

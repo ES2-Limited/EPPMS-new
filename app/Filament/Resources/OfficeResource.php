@@ -20,6 +20,8 @@ class OfficeResource extends Resource
 
     protected static ?string $navigationGroup = 'Organisation';
 
+    protected static ?string $navigationLabel = 'Office Location';
+
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form

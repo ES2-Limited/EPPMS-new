@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources;
 
+use App\Constants\RoleAndPermissions;
 use App\Filament\Resources\TaskResource\Pages;
 use App\Models\Milestone;
 use App\Models\Task;
 use App\Support\ProjectAccess;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -24,13 +27,111 @@ class TaskResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('milestone_id')->relationship('milestone', 'name')->searchable()->preload()->required(),
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\Textarea::make('description')->rows(3)->columnSpanFull(),
-            Forms\Components\Select::make('status')->options(['pending' => 'Pending', 'done' => 'Done'])->default('pending')->required()->native(false),
-            Forms\Components\DatePicker::make('start_date'),
-            Forms\Components\DatePicker::make('due_date')->afterOrEqual('start_date'),
-            Forms\Components\TextInput::make('cost')->numeric()->minValue(0)->default(0)->required(),
+            Forms\Components\Hidden::make('milestone_id'),
+
+            Forms\Components\TextInput::make('name')
+                ->label('Task Name')
+                ->required()
+                ->maxLength(255)
+                ->columnSpanFull(),
+
+            Forms\Components\Textarea::make('description')
+                ->label('Description')
+                ->required()
+                ->rows(3)
+                ->columnSpanFull(),
+
+            Forms\Components\DatePicker::make('start_date')
+                ->label('Start Date')
+                ->required()
+                ->rules(fn (Get $get, ?Task $record): array => [
+                    function (string $attribute, mixed $value, \Closure $fail) use ($get, $record) {
+                        if (! $value) {
+                            return;
+                        }
+
+                        $milestoneId = $get('milestone_id') ?? $record?->milestone_id;
+                        $milestone   = $milestoneId ? Milestone::with('project')->find($milestoneId) : null;
+                        $project     = $milestone?->project;
+
+                        if (! $project?->award_date) {
+                            return;
+                        }
+
+                        if (Carbon::parse($value)->lt($project->award_date)) {
+                            $fail(
+                                'Task dates must fall within the project timeline: '.
+                                $project->award_date->format('d M Y').' to '.$project->end_date->format('d M Y')
+                            );
+                        }
+                    },
+                ]),
+
+            Forms\Components\DatePicker::make('due_date')
+                ->label('Due Date')
+                ->required()
+                ->afterOrEqual('start_date')
+                ->rules(fn (Get $get, ?Task $record): array => [
+                    function (string $attribute, mixed $value, \Closure $fail) use ($get, $record) {
+                        if (! $value) {
+                            return;
+                        }
+
+                        $milestoneId = $get('milestone_id') ?? $record?->milestone_id;
+                        $milestone   = $milestoneId ? Milestone::with('project')->find($milestoneId) : null;
+                        $project     = $milestone?->project;
+
+                        if (! $project?->award_date) {
+                            return;
+                        }
+
+                        $projEnd = $project->end_date;
+
+                        if (Carbon::parse($value)->gt($projEnd)) {
+                            $fail(
+                                'Task dates must fall within the project timeline: '.
+                                $project->award_date->format('d M Y').' to '.$projEnd->format('d M Y')
+                            );
+                        }
+                    },
+                ]),
+
+            Forms\Components\TextInput::make('cost')
+                ->label('Cost')
+                ->numeric()
+                ->minValue(0)
+                ->required()
+                ->rules(fn (Get $get, ?Task $record): array => [
+                    function (string $attribute, mixed $value, \Closure $fail) use ($get, $record) {
+                        $milestoneId = $get('milestone_id') ?? $record?->milestone_id;
+
+                        if (! $milestoneId) {
+                            return;
+                        }
+
+                        $milestone = Milestone::find($milestoneId);
+
+                        if (! $milestone) {
+                            return;
+                        }
+
+                        $existingCost = (float) Task::query()
+                            ->where('milestone_id', $milestoneId)
+                            ->whereNull('deleted_at')
+                            ->when($record?->id, fn ($q) => $q->where('id', '!=', $record->id))
+                            ->sum('cost');
+
+                        $newTotal = $existingCost + (float) $value;
+
+                        if ($newTotal > (float) $milestone->amount) {
+                            $remaining = max(0, (float) $milestone->amount - $existingCost);
+                            $fail(
+                                'The total task cost cannot exceed the milestone amount of ₦'.number_format((float) $milestone->amount, 2).'. '.
+                                'Remaining available: ₦'.number_format($remaining, 2)
+                            );
+                        }
+                    },
+                ]),
         ])->columns(2);
     }
 
@@ -45,10 +146,9 @@ class TaskResource extends Resource
                 Tables\Columns\TextColumn::make('start_date')->date(),
                 Tables\Columns\TextColumn::make('due_date')->date(),
                 Tables\Columns\TextColumn::make('cost')->money('NGN'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('milestone_id')->label('Milestone')->options(fn (): array => Milestone::query()->pluck('name', 'id')->all()),
                 Tables\Filters\SelectFilter::make('status')->options(['pending' => 'Pending', 'done' => 'Done']),
                 Tables\Filters\TrashedFilter::make(),
             ])
@@ -56,13 +156,18 @@ class TaskResource extends Resource
                 Tables\Actions\Action::make('markDone')
                     ->label('Mark as Done')
                     ->icon('heroicon-o-check-circle')
-                    ->visible(fn (Task $record): bool => $record->status !== 'done' && auth()->check() && Task::canBeMarkedDoneBy(auth()->user(), $record))
+                    ->visible(fn (Task $record): bool => $record->status !== 'done'
+                        && auth()->check()
+                        && Task::canBeMarkedDoneBy(auth()->user(), $record))
                     ->action(function (Task $record): void {
                         $record->mark_as_done();
                         Notification::make()->title('Task marked as done')->success()->send();
                     }),
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->visible(fn (): bool => auth()->user()?->hasAnyRole([
+                    RoleAndPermissions::ADMIN,
+                    RoleAndPermissions::ORGANIZATION_ADMIN,
+                ]) ?? false),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
@@ -72,22 +177,27 @@ class TaskResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class])->with('milestone.project');
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
+            ->with('milestone.project');
 
         if (! auth()->user()) {
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('milestone.project', fn (Builder $projects): Builder => ProjectAccess::scopeProjects($projects, auth()->user()));
+        return $query->whereHas(
+            'milestone.project',
+            fn (Builder $projects): Builder => ProjectAccess::scopeProjects($projects, auth()->user())
+        );
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTasks::route('/'),
+            'index'  => Pages\ListTasks::route('/'),
             'create' => Pages\CreateTask::route('/create'),
-            'view' => Pages\ViewTask::route('/{record}'),
-            'edit' => Pages\EditTask::route('/{record}/edit'),
+            'view'   => Pages\ViewTask::route('/{record}'),
+            'edit'   => Pages\EditTask::route('/{record}/edit'),
         ];
     }
 }

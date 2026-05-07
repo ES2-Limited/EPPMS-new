@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasUlid;
 use App\Models\Concerns\HasUserAudits;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,13 +21,17 @@ class Milestone extends Model
         'project_ulid',
         'name',
         'amount',
+        'start_date',
+        'end_date',
         'description',
         'created_by_id',
         'deleted_by',
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'     => 'decimal:2',
+        'start_date' => 'date',
+        'end_date'   => 'date',
     ];
 
     protected static function booted(): void
@@ -36,6 +41,21 @@ class Milestone extends Model
                 $milestone->project_ulid = Project::query()->whereKey($milestone->project_id)->value('ulid');
             }
         });
+    }
+
+    public function getTaskCostUsedAttribute(): float
+    {
+        return (float) $this->tasks()->whereNull('deleted_at')->sum('cost');
+    }
+
+    public function getTaskCostRemainingAttribute(): float
+    {
+        return max(0.0, (float) $this->amount - $this->task_cost_used);
+    }
+
+    public function getProjectEndDateAttribute(): Carbon
+    {
+        return $this->project?->end_date ?? Carbon::now();
     }
 
     public function project(): BelongsTo

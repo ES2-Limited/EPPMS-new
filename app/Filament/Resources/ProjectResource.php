@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Constants\RoleAndPermissions;
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource\RelationManagers;
 use App\Models\Contractor;
@@ -12,14 +13,12 @@ use App\Models\Project;
 use App\Support\ProjectAccess;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Storage;
 
 class ProjectResource extends Resource
 {
@@ -38,82 +37,122 @@ class ProjectResource extends Resource
         return $form->schema([
             Forms\Components\Section::make('Project Details')
                 ->schema([
-                    Forms\Components\TextInput::make('name')->required()->maxLength(255)->columnSpanFull(),
-                    Forms\Components\Select::make('status')->options(array_combine(Project::STATUSES, array_map(fn (string $status): string => str($status)->replace('_', ' ')->title()->toString(), Project::STATUSES)))->required()->native(false),
-                    Forms\Components\TextInput::make('priority')->maxLength(255),
-                    Forms\Components\Textarea::make('description')->rows(4)->columnSpanFull(),
-                ])
-                ->columns(2),
-            Forms\Components\Section::make('Financials')
-                ->schema([
-                    Forms\Components\TextInput::make('cost')->numeric()->minValue(0)->default(0)->required()->live(onBlur: true),
-                    Forms\Components\TextInput::make('total_paid')->numeric()->minValue(0)->default(0)->required()->live(onBlur: true),
-                    Forms\Components\TextInput::make('total_left')->numeric()->disabled()->dehydrated(false)->formatStateUsing(fn (?Project $record, $state): string => number_format((float) ($record?->total_left ?? $state ?? 0), 2)),
-                ])
-                ->columns(3),
-            Forms\Components\Section::make('Award')
-                ->schema([
-                    Forms\Components\DatePicker::make('award_date'),
-                    Forms\Components\TextInput::make('duration')->integer()->minValue(1)->requiredWith('duration_period'),
-                    Forms\Components\Select::make('duration_period')->options(array_combine(Project::DURATION_PERIODS, array_map('ucfirst', Project::DURATION_PERIODS)))->requiredWith('duration')->native(false),
+                    // Row 1 – full width
+                    Forms\Components\TextInput::make('name')
+                        ->label('Project Name')
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpanFull(),
+
+                    // Row 2 – full width
+                    Forms\Components\Textarea::make('description')
+                        ->label('Project Description')
+                        ->required()
+                        ->rows(4)
+                        ->columnSpanFull(),
+
+                    // Row 3 – 2 columns (each span 3 of 6)
+                    Forms\Components\Select::make('directorate_id')
+                        ->label('Project Directorate')
+                        ->relationship('directorate', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
+                        ->live()
+                        ->columnSpan(3),
+
+                    Forms\Components\Select::make('department_id')
+                        ->label('Project Department')
+                        ->options(fn (Get $get): array => Department::query()
+                            ->when(
+                                $get('directorate_id'),
+                                fn ($q, $id) => $q->where('directorate_id', $id)
+                            )
+                            ->pluck('name', 'id')
+                            ->all())
+                        ->searchable()
+                        ->nullable()
+                        ->columnSpan(3),
+
+                    // Row 4 – 3 columns (each span 2 of 6)
+                    Forms\Components\Select::make('project_type')
+                        ->label('Project Type')
+                        ->options(array_combine(Project::PROJECT_TYPES, Project::PROJECT_TYPES))
+                        ->required()
+                        ->native(false)
+                        ->columnSpan(2),
+
+                    Forms\Components\Select::make('contractor_id')
+                        ->label('Project Contractor')
+                        ->options(fn (): array => Contractor::query()
+                            ->with('user')
+                            ->where('firm_type_id', Contractor::TYPE_CONTRACTOR)
+                            ->get()
+                            ->mapWithKeys(fn (Contractor $c): array => [$c->id => $c->user?->name ?? 'Contractor #'.$c->id])
+                            ->all())
+                        ->searchable()
+                        ->nullable()
+                        ->columnSpan(2),
+
+                    Forms\Components\Select::make('consultant_id')
+                        ->label('Project Consultant')
+                        ->options(fn (): array => Contractor::query()
+                            ->with('user')
+                            ->where('firm_type_id', Contractor::TYPE_CONSULTANT)
+                            ->get()
+                            ->mapWithKeys(fn (Contractor $c): array => [$c->id => $c->user?->name ?? 'Consultant #'.$c->id])
+                            ->all())
+                        ->searchable()
+                        ->nullable()
+                        ->columnSpan(2),
+
+                    // Row 5 – 2 columns (each span 3 of 6)
+                    Forms\Components\TextInput::make('cost')
+                        ->label('Project Cost')
+                        ->numeric()
+                        ->minValue(0)
+                        ->required()
+                        ->columnSpan(3),
+
+                    Forms\Components\Select::make('office_id')
+                        ->label('Project Location')
+                        ->relationship('office', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->columnSpan(3),
+
+                    // Row 6 – 3 columns (each span 2 of 6)
+                    Forms\Components\DatePicker::make('award_date')
+                        ->label('Award Date')
+                        ->required()
+                        ->columnSpan(2),
+
+                    Forms\Components\TextInput::make('duration')
+                        ->label('Project Duration')
+                        ->integer()
+                        ->minValue(1)
+                        ->required()
+                        ->columnSpan(2),
+
+                    Forms\Components\Select::make('duration_period')
+                        ->label('Duration By')
+                        ->options(['days' => 'Days', 'months' => 'Months', 'weeks' => 'Weeks'])
+                        ->required()
+                        ->native(false)
+                        ->columnSpan(2),
+
+                    // Row 7 – full width
                     Forms\Components\FileUpload::make('award_letter')
+                        ->label('Upload Award Letter')
                         ->disk('public')
                         ->directory('project_files')
                         ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
                         ->downloadable()
-                        ->openable(),
+                        ->openable()
+                        ->columnSpanFull(),
                 ])
-                ->columns(4),
-            Forms\Components\Section::make('Organisation and Firm')
-                ->schema([
-                    Forms\Components\Select::make('office_id')->relationship('office', 'name')->searchable()->preload(),
-                    Forms\Components\Select::make('directorate_id')->relationship('directorate', 'name')->searchable()->preload(),
-                    Forms\Components\Select::make('department_id')->relationship('department', 'name')->searchable()->preload(),
-                    Forms\Components\Select::make('contractor_id')
-                        ->label('Contractor')
-                        ->options(fn (): array => Contractor::query()->with('user')->whereIn('firm_type_id', [0, 1])->get()->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Contractor #'.$contractor->id])->all())
-                        ->searchable()
-                        ->preload(),
-                    Forms\Components\Select::make('consultant_id')
-                        ->label('Consultant')
-                        ->options(fn (): array => Contractor::query()->with('user')->where('firm_type_id', Contractor::TYPE_CONSULTANT)->get()->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Consultant #'.$contractor->id])->all())
-                        ->searchable()
-                        ->preload(),
-                ])
-                ->columns(3),
-        ]);
-    }
-
-    public static function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist->schema([
-            Infolists\Components\Section::make('Project Details')
-                ->schema([
-                    Infolists\Components\TextEntry::make('name'),
-                    Infolists\Components\TextEntry::make('status')->badge(),
-                    Infolists\Components\TextEntry::make('priority'),
-                    Infolists\Components\TextEntry::make('description')->columnSpanFull(),
-                    Infolists\Components\TextEntry::make('progress')->label('Progress')->state(fn (Project $record): string => $record->get_progress().'%'),
-                    Infolists\Components\TextEntry::make('time_left')->label('Time Left'),
-                ])->columns(3),
-            Infolists\Components\Section::make('Award and Finance')
-                ->schema([
-                    Infolists\Components\TextEntry::make('award_date')->date(),
-                    Infolists\Components\TextEntry::make('award_letter')->label('Award Letter')->url(fn (?string $state): ?string => $state ? Storage::disk('public')->url($state) : null)->openUrlInNewTab(),
-                    Infolists\Components\TextEntry::make('cost')->money('NGN'),
-                    Infolists\Components\TextEntry::make('total_paid')->money('NGN'),
-                    Infolists\Components\TextEntry::make('total_left')->money('NGN'),
-                ])->columns(3),
-            Infolists\Components\Section::make('Assignments')
-                ->schema([
-                    Infolists\Components\TextEntry::make('office.name')->label('Office'),
-                    Infolists\Components\TextEntry::make('directorate.name')->label('Directorate'),
-                    Infolists\Components\TextEntry::make('department.name')->label('Department'),
-                    Infolists\Components\TextEntry::make('contractor.user.name')->label('Contractor'),
-                    Infolists\Components\TextEntry::make('consultant.user.name')->label('Consultant'),
-                    Infolists\Components\TextEntry::make('milestones_count')->label('Milestones')->state(fn (Project $record): int => $record->milestones()->count()),
-                    Infolists\Components\TextEntry::make('project_personnel_count')->label('Project Personnel')->state(fn (Project $record): int => $record->projectPersonnel()->count()),
-                ])->columns(3),
+                ->columns(6),
         ]);
     }
 
@@ -122,38 +161,37 @@ class ProjectResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('project_type')->label('Type')->sortable(),
                 Tables\Columns\TextColumn::make('office.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('directorate.name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('department.name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('contractor.user.name')->label('Contractor')->searchable(),
-                Tables\Columns\TextColumn::make('consultant.user.name')->label('Consultant')->searchable(),
                 Tables\Columns\TextColumn::make('status')->badge()->searchable(),
-                Tables\Columns\TextColumn::make('priority')->searchable(),
-                Tables\Columns\TextColumn::make('description')->searchable()->limit(40)->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('cost')->money('NGN')->sortable(),
-                Tables\Columns\TextColumn::make('total_paid')->money('NGN')->sortable(),
-                Tables\Columns\TextColumn::make('total_left')->money('NGN')->sortable(),
-                Tables\Columns\TextColumn::make('progress')->label('Progress')->state(fn (Project $record): string => $record->get_progress().'%'),
                 Tables\Columns\TextColumn::make('award_date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')->options(array_combine(Project::STATUSES, Project::STATUSES)),
-                Tables\Filters\SelectFilter::make('office_id')->label('Office')->options(fn (): array => Office::query()->pluck('name', 'id')->all()),
-                Tables\Filters\SelectFilter::make('directorate_id')->label('Directorate')->options(fn (): array => Directorate::query()->pluck('name', 'id')->all()),
-                Tables\Filters\SelectFilter::make('department_id')->label('Department')->options(fn (): array => Department::query()->pluck('name', 'id')->all()),
-                Tables\Filters\SelectFilter::make('contractor_id')->label('Contractor')->options(fn (): array => Contractor::query()->with('user')->whereIn('firm_type_id', [0, 1])->get()->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Contractor #'.$contractor->id])->all()),
-                Tables\Filters\SelectFilter::make('consultant_id')->label('Consultant')->options(fn (): array => Contractor::query()->with('user')->where('firm_type_id', Contractor::TYPE_CONSULTANT)->get()->mapWithKeys(fn (Contractor $contractor): array => [$contractor->id => $contractor->user?->name ?? 'Consultant #'.$contractor->id])->all()),
+                Tables\Filters\SelectFilter::make('directorate_id')
+                    ->label('Directorate')
+                    ->options(fn (): array => Directorate::query()->pluck('name', 'id')->all()),
+                Tables\Filters\SelectFilter::make('office_id')
+                    ->label('Office')
+                    ->options(fn (): array => Office::query()->pluck('name', 'id')->all()),
+                Tables\Filters\SelectFilter::make('project_type')
+                    ->label('Project Type')
+                    ->options(array_combine(Project::PROJECT_TYPES, Project::PROJECT_TYPES)),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->visible(fn (): bool => auth()->user()?->hasAnyRole([
+                    RoleAndPermissions::ADMIN,
+                    RoleAndPermissions::ORGANIZATION_ADMIN,
+                ]) ?? false),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
             ])
-            ->paginated([10, 25, 50]);
+            ->paginated([12, 24, 48]);
     }
 
     public static function getEloquentQuery(): Builder
@@ -162,7 +200,9 @@ class ProjectResource extends Resource
             ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['office', 'directorate', 'department', 'contractor.user', 'consultant.user']);
 
-        return auth()->user() ? ProjectAccess::scopeProjects($query, auth()->user()) : $query->whereRaw('1 = 0');
+        return auth()->user()
+            ? ProjectAccess::scopeProjects($query, auth()->user())
+            : $query->whereRaw('1 = 0');
     }
 
     public static function getRelations(): array
@@ -176,11 +216,11 @@ class ProjectResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProjects::route('/'),
+            'index'  => Pages\ListProjects::route('/'),
             'create' => Pages\CreateProject::route('/create'),
             'report' => Pages\ProjectReport::route('/{record}/report'),
-            'view' => Pages\ViewProject::route('/{record}'),
-            'edit' => Pages\EditProject::route('/{record}/edit'),
+            'view'   => Pages\ViewProject::route('/{record}'),
+            'edit'   => Pages\EditProject::route('/{record}/edit'),
         ];
     }
 }

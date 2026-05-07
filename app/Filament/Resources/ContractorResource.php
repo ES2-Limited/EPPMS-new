@@ -22,7 +22,7 @@ class ContractorResource extends Resource
 
     protected static ?string $navigationGroup = 'Firm';
 
-    protected static ?string $navigationLabel = 'Contractors';
+    protected static ?string $navigationLabel = 'Firms';
 
     protected static ?int $navigationSort = 1;
 
