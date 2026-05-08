@@ -17,6 +17,12 @@ class CreateMilestone extends CreateRecord
             $data['project_id'] = (int) request()->query('project_id');
         }
 
+        if (empty($data['project_id']) && request()->has('project_ulid')) {
+            $data['project_id'] = Project::query()
+                ->where('ulid', request()->query('project_ulid'))
+                ->value('id');
+        }
+
         return $data;
     }
 
@@ -30,7 +36,9 @@ class CreateMilestone extends CreateRecord
     public function getBreadcrumbs(): array
     {
         $projectId = request()->query('project_id') ?? $this->record?->project_id;
-        $project   = $projectId ? Project::find($projectId) : null;
+        $project = request()->query('project_ulid')
+            ? Project::query()->where('ulid', request()->query('project_ulid'))->first()
+            : ($projectId ? Project::find($projectId) : null);
 
         $breadcrumbs = [];
 
@@ -50,6 +58,14 @@ class CreateMilestone extends CreateRecord
 
         if (request()->has('project_id')) {
             $this->form->fill(['project_id' => (int) request()->query('project_id')]);
+        }
+
+        if (request()->has('project_ulid')) {
+            $this->form->fill([
+                'project_id' => Project::query()
+                    ->where('ulid', request()->query('project_ulid'))
+                    ->value('id'),
+            ]);
         }
     }
 }

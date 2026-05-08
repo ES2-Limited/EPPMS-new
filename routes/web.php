@@ -1,5 +1,9 @@
 <?php
 
+use App\Filament\Pages\AddProjectPersonnel;
+use App\Filament\Pages\MilestoneTasks;
+use App\Filament\Pages\ProjectMilestones;
+use App\Filament\Pages\ProjectPersonnels;
 use App\Models\Contractor;
 use App\Models\Department;
 use App\Models\Directorate;
@@ -12,6 +16,26 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function (): void {
+    Route::get(
+        '/admin/project/milestones/{project}',
+        ProjectMilestones::class
+    )->name('filament.admin.pages.project-milestones');
+
+    Route::get(
+        '/admin/project/personnels/{project}',
+        ProjectPersonnels::class
+    )->name('filament.admin.pages.project-personnels');
+
+    Route::get(
+        '/admin/project/personnels/{project}/create',
+        AddProjectPersonnel::class
+    )->name('filament.admin.pages.add-project-personnel');
+
+    Route::get(
+        '/admin/project/milestone/{milestone}/tasks',
+        MilestoneTasks::class
+    )->name('filament.admin.pages.milestone-tasks');
+
     Route::get('/admin/offices/records/print', function () {
         return view('prints.offices', [
             'offices' => Office::query()->orderBy('name')->get(),

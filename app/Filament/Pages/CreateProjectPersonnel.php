@@ -26,7 +26,7 @@ class CreateProjectPersonnel extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $slug = 'project/personnels/create/{project}';
+    protected static bool $isDiscovered = false;
 
     protected static bool $shouldRegisterNavigation = false;
 
@@ -40,7 +40,10 @@ class CreateProjectPersonnel extends Page implements HasForms
     {
         abort_unless(auth()->check(), 403);
 
-        $this->projectRecord = Project::query()->where('ulid', $project)->firstOrFail();
+        $this->projectRecord = Project::query()
+            ->where('ulid', $project)
+            ->orWhere('id', $project)
+            ->firstOrFail();
 
         abort_unless(ProjectAccess::canManageProject(auth()->user()), 403);
         abort_unless(ProjectAccess::canViewProject(auth()->user(), $this->projectRecord), 403);
@@ -137,6 +140,6 @@ class CreateProjectPersonnel extends Page implements HasForms
 
         Notification::make()->title('Project personnel added')->success()->send();
 
-        $this->redirect('/admin/project/personnels/'.$this->projectRecord->ulid);
+        $this->redirect(route('filament.admin.pages.project-personnels', ['project' => $this->projectRecord->ulid]));
     }
 }

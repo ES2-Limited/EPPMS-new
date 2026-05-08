@@ -1,19 +1,16 @@
 <x-filament-panels::page>
     @php
-        use App\Filament\Resources\ProjectResource;
-        use App\Support\ProjectAccess;
-
         $project = $this->projectRecord;
-        $canManage = ProjectAccess::canManageProject(auth()->user());
+        $canManage = \App\Support\ProjectAccess::canManageProject(auth()->user());
     @endphp
 
     <div class="space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-2xl font-semibold text-gray-950">{{ $project->name }} Project Personnels</h1>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ ProjectResource::getUrl('view', ['record' => $project]) }}" class="rounded-lg px-4 py-2 text-sm font-semibold text-white" style="background-color: #5B5FC7;">View Project</a>
+                <a href="{{ \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $project]) }}" class="rounded-lg px-4 py-2 text-sm font-semibold text-white" style="background-color: #5B5FC7;">View Project</a>
                 @if ($canManage)
-                    <a href="{{ url('/admin/project/personnels/create/'.$project->ulid) }}" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white">Add Project Personnel</a>
+                    <a href="{{ route('filament.admin.pages.add-project-personnel', ['project' => $project->ulid]) }}" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white">Add Project Personnel</a>
                 @endif
             </div>
         </div>

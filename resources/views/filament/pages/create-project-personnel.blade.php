@@ -3,7 +3,7 @@
 
     <div class="space-y-6">
         <div class="flex justify-end">
-            <a href="{{ url('/admin/project/personnels/'.$project->ulid) }}" class="rounded-lg px-4 py-2 text-sm font-semibold text-white" style="background-color: #5B5FC7;">Go back</a>
+            <a href="{{ route('filament.admin.pages.project-personnels', ['project' => $project->ulid]) }}" class="rounded-lg px-4 py-2 text-sm font-semibold text-white" style="background-color: #5B5FC7;">Go back</a>
         </div>
 
         <form wire:submit="save" class="space-y-6">

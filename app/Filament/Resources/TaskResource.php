@@ -27,6 +27,37 @@ class TaskResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
+            Forms\Components\Placeholder::make('cost_info')
+                ->label('')
+                ->content(function (Get $get, ?Task $record = null): string {
+                    $milestoneId = $get('milestone_id')
+                        ?? request()->query('milestone_id')
+                        ?? $record?->milestone_id;
+
+                    $milestoneUlid = request()->query('milestone_ulid');
+
+                    $milestone = $milestoneUlid
+                        ? Milestone::query()->where('ulid', $milestoneUlid)->first()
+                        : ($milestoneId ? Milestone::query()->find($milestoneId) : null);
+
+                    if (! $milestone) {
+                        return '';
+                    }
+
+                    $usedCost = (float) $milestone->tasks()
+                        ->whereNull('deleted_at')
+                        ->when($record?->id, fn (Builder $query): Builder => $query->whereKeyNot($record->id))
+                        ->sum('cost');
+
+                    $remaining = max(0, (float) $milestone->amount - $usedCost);
+
+                    return 'The max cost for task that can be added is: '.number_format($remaining, 2);
+                })
+                ->columnSpanFull()
+                ->extraAttributes([
+                    'style' => 'background:#d1fae5; border-left:4px solid #16A34A; padding:12px 16px; border-radius:8px; font-size:14px; color:#374151; font-weight:500;',
+                ]),
+
             Forms\Components\Hidden::make('milestone_id'),
 
             Forms\Components\TextInput::make('name')
@@ -51,8 +82,8 @@ class TaskResource extends Resource
                         }
 
                         $milestoneId = $get('milestone_id') ?? $record?->milestone_id;
-                        $milestone   = $milestoneId ? Milestone::with('project')->find($milestoneId) : null;
-                        $project     = $milestone?->project;
+                        $milestone = $milestoneId ? Milestone::with('project')->find($milestoneId) : null;
+                        $project = $milestone?->project;
 
                         if (! $project?->award_date) {
                             return;
@@ -78,8 +109,8 @@ class TaskResource extends Resource
                         }
 
                         $milestoneId = $get('milestone_id') ?? $record?->milestone_id;
-                        $milestone   = $milestoneId ? Milestone::with('project')->find($milestoneId) : null;
-                        $project     = $milestone?->project;
+                        $milestone = $milestoneId ? Milestone::with('project')->find($milestoneId) : null;
+                        $project = $milestone?->project;
 
                         if (! $project?->award_date) {
                             return;
@@ -194,10 +225,10 @@ class TaskResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListTasks::route('/'),
+            'index' => Pages\ListTasks::route('/'),
             'create' => Pages\CreateTask::route('/create'),
-            'view'   => Pages\ViewTask::route('/{record}'),
-            'edit'   => Pages\EditTask::route('/{record}/edit'),
+            'view' => Pages\ViewTask::route('/{record}'),
+            'edit' => Pages\EditTask::route('/{record}/edit'),
         ];
     }
 }

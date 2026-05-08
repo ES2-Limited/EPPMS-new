@@ -24,13 +24,13 @@ class EditTask extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return MilestoneResource::getUrl('view', ['record' => $this->record->milestone_id]);
+        return MilestoneResource::getUrl('view', ['record' => $this->record->milestone]);
     }
 
     public function getBreadcrumbs(): array
     {
         $milestone = $this->record->milestone;
-        $project   = $milestone?->project;
+        $project = $milestone?->project;
 
         $breadcrumbs = [];
 

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ProjectPersonnels extends Page
 {
-    protected static ?string $slug = 'project/personnels/{project}';
+    protected static bool $isDiscovered = false;
 
     protected static bool $shouldRegisterNavigation = false;
 
@@ -22,7 +22,10 @@ class ProjectPersonnels extends Page
     {
         abort_unless(auth()->check(), 403);
 
-        $this->projectRecord = Project::query()->where('ulid', $project)->firstOrFail();
+        $this->projectRecord = Project::query()
+            ->where('ulid', $project)
+            ->orWhere('id', $project)
+            ->firstOrFail();
 
         abort_unless(ProjectAccess::canViewProject(auth()->user(), $this->projectRecord), 403);
     }

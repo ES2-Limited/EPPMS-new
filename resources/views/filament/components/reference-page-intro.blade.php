@@ -1,21 +1,14 @@
 @php
-    use App\Models\Contractor;
-    use App\Models\Department;
-    use App\Models\Directorate;
-    use App\Models\Office;
-    use App\Models\Personnel;
-    use App\Models\Unit;
-
     $cards = [
-        ['label' => 'Contractors', 'count' => Contractor::query()->where('firm_type_id', Contractor::TYPE_CONTRACTOR)->count(), 'color' => '#E6F7F5'],
-        ['label' => 'Consultants', 'count' => Contractor::query()->where('firm_type_id', Contractor::TYPE_CONSULTANT)->count(), 'color' => '#ffffff'],
+        ['label' => 'Contractors', 'count' => \App\Models\Contractor::query()->where('firm_type_id', \App\Models\Contractor::TYPE_CONTRACTOR)->count(), 'color' => '#E6F7F5'],
+        ['label' => 'Consultants', 'count' => \App\Models\Contractor::query()->where('firm_type_id', \App\Models\Contractor::TYPE_CONSULTANT)->count(), 'color' => '#ffffff'],
     ];
 
-    $officeCount = Office::query()->count();
-    $directorateCount = Directorate::query()->count();
-    $departmentCount = Department::query()->count();
-    $unitCount = Unit::query()->count();
-    $personnelCount = Personnel::query()->count();
+    $officeCount = \App\Models\Office::query()->count();
+    $directorateCount = \App\Models\Directorate::query()->count();
+    $departmentCount = \App\Models\Department::query()->count();
+    $unitCount = \App\Models\Unit::query()->count();
+    $personnelCount = \App\Models\Personnel::query()->count();
 @endphp
 
 <div class="space-y-4">

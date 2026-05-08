@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\ProjectResource\Pages;
 
 use App\Filament\Resources\ProjectResource;
+use App\Models\Project;
 use App\Models\ProjectChat;
 use App\Support\ProjectAccess;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class ViewProject extends ViewRecord
 {
@@ -23,6 +26,14 @@ class ViewProject extends ViewRecord
         parent::mount($record);
 
         $this->commentForm->fill();
+    }
+
+    protected function resolveRecord(int|string $key): Model
+    {
+        return Project::query()
+            ->where('ulid', $key)
+            ->orWhere('id', $key)
+            ->firstOrFail();
     }
 
     public function commentForm(Form $form): Form
@@ -71,6 +82,16 @@ class ViewProject extends ViewRecord
     }
 
     protected function getHeaderActions(): array
+    {
+        return [];
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return '';
+    }
+
+    public function getBreadcrumbs(): array
     {
         return [];
     }

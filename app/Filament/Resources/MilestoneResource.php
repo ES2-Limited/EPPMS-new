@@ -27,6 +27,37 @@ class MilestoneResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
+            Forms\Components\Placeholder::make('amount_info')
+                ->label('')
+                ->content(function (Get $get, ?Milestone $record = null): string {
+                    $projectId = $get('project_id')
+                        ?? request()->query('project_id')
+                        ?? $record?->project_id;
+
+                    $projectUlid = request()->query('project_ulid');
+
+                    $project = $projectUlid
+                        ? Project::query()->where('ulid', $projectUlid)->first()
+                        : ($projectId ? Project::query()->find($projectId) : null);
+
+                    if (! $project) {
+                        return '';
+                    }
+
+                    $used = (float) $project->milestones()
+                        ->whereNull('deleted_at')
+                        ->when($record?->id, fn (Builder $query): Builder => $query->whereKeyNot($record->id))
+                        ->sum('amount');
+
+                    $remaining = max(0, (float) $project->cost - $used);
+
+                    return 'The max amount for milestone that can be added is: '.number_format($remaining, 2);
+                })
+                ->columnSpanFull()
+                ->extraAttributes([
+                    'style' => 'background:#ede9fe; border-left:4px solid #5B5FC7; padding:12px 16px; border-radius:8px; font-size:14px; color:#374151; font-weight:500;',
+                ]),
+
             Forms\Components\Hidden::make('project_id'),
 
             Forms\Components\TextInput::make('name')
@@ -82,7 +113,7 @@ class MilestoneResource extends Resource
                         }
 
                         $projectId = $get('project_id') ?? $record?->project_id;
-                        $project   = $projectId ? Project::find($projectId) : null;
+                        $project = $projectId ? Project::find($projectId) : null;
 
                         if (! $project?->award_date) {
                             return;
@@ -108,7 +139,7 @@ class MilestoneResource extends Resource
                         }
 
                         $projectId = $get('project_id') ?? $record?->project_id;
-                        $project   = $projectId ? Project::find($projectId) : null;
+                        $project = $projectId ? Project::find($projectId) : null;
 
                         if (! $project?->award_date) {
                             return;
@@ -182,11 +213,11 @@ class MilestoneResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListMilestones::route('/'),
+            'index' => Pages\ListMilestones::route('/'),
             'create' => Pages\CreateMilestone::route('/create'),
             'report' => Pages\MilestoneReport::route('/{record}/report'),
-            'view'   => Pages\ViewMilestone::route('/{record}'),
-            'edit'   => Pages\EditMilestone::route('/{record}/edit'),
+            'view' => Pages\ViewMilestone::route('/{record}'),
+            'edit' => Pages\EditMilestone::route('/{record}/edit'),
         ];
     }
 }

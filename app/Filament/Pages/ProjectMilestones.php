@@ -11,31 +11,39 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ProjectMilestones extends Page
 {
-    protected static ?string $slug = 'project/milestones/{project}';
+    protected static bool $isDiscovered = false;
 
     protected static bool $shouldRegisterNavigation = false;
 
     protected static string $view = 'filament.pages.project-milestones';
 
-    public Project $projectRecord;
+    public Project $project;
 
     public function mount(string $project): void
     {
         abort_unless(auth()->check(), 403);
 
-        $this->projectRecord = Project::query()->where('ulid', $project)->firstOrFail();
+        $this->project = Project::query()
+            ->where('ulid', $project)
+            ->orWhere('id', $project)
+            ->firstOrFail();
 
-        abort_unless(ProjectAccess::canViewProject(auth()->user(), $this->projectRecord), 403);
+        abort_unless(ProjectAccess::canViewProject(auth()->user(), $this->project), 403);
     }
 
     public function getTitle(): string
     {
-        return $this->projectRecord->name.' Project Milestones';
+        return '';
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [];
     }
 
     public function getMilestones(): Collection
     {
-        return $this->projectRecord
+        return $this->project
             ->milestones()
             ->withCount('tasks')
             ->with('tasks')
@@ -46,10 +54,10 @@ class ProjectMilestones extends Page
 
     public function deleteMilestone(int $milestoneId): void
     {
-        abort_unless(ProjectAccess::canManageProject(auth()->user(), $this->projectRecord), 403);
+        abort_unless(ProjectAccess::canManageProject(auth()->user(), $this->project), 403);
 
         Milestone::query()
-            ->where('project_id', $this->projectRecord->id)
+            ->where('project_id', $this->project->id)
             ->whereKey($milestoneId)
             ->firstOrFail()
             ->delete();
